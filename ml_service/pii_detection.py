@@ -1,5 +1,7 @@
 from gliner import GLiNER
 from transformers import pipeline
+import re
+
 
 # Loading PII model
 print("Loading GLiNER PII model...")
@@ -7,7 +9,7 @@ gliner_model = GLiNER.from_pretrained("nvidia/gliner-pii")
 
 # PII labels to detect
 LABELS = [
-    "name", "user_name", "given_name", "surname",
+    "name", "given_name", "surname",
     "date_of_birth", "age", "email", "phone_number",
     "address", "city", "state", "zip_code", "ip_address", "url",
     "account_number", "credit_card_number", "bank_name", "pan_number", "ssn",
@@ -22,13 +24,17 @@ LABELS = [
 print("Loading Mental-health classifier...")
 mental_health_model = pipeline(
     "text-classification",
-    model="mental/mental-roberta-base",
+    model="Akashpaul123/bert-suicide-detection",
+    tokenizer="Akashpaul123/bert-suicide-detection",
     top_k=None
 )
-# Label mapping for human-readable output
-LABEL_MAP = {
-    "LABEL_0": "neutral",
-    "LABEL_1": "mental_distress"
+
+# Mental-health labeling
+MENTAL_LABEL_MAP = {
+    "LABEL_0": "non_suicidal",
+    "LABEL_1": "suicidal",
+    "label_0": "non_suicidal",
+    "label_1": "suicidal"
 }
 
 
@@ -36,21 +42,24 @@ LABEL_MAP = {
 def detect_pii(text: str, threshold: float = 0.5) -> dict:
     pii_entities = gliner_model.predict_entities(text, LABELS, threshold=threshold)
     pii_results = [{"label": e["label"], "score": round(e["score"], 3)} for e in pii_entities]
+    results = pii_results
 
-    mhm_results_raw = mental_health_model(text)
-    if isinstance(mhm_results_raw, list) and isinstance(mhm_results_raw[0], list):
-        mhm_results_raw = mhm_results_raw[0]
+    sentences = [s.strip() for s in re.split(r'[.!?]', text) if s.strip()]
+    for sentence in sentences:
+        mhm_results_raw = mental_health_model(sentence)
+        if isinstance(mhm_results_raw, list) and isinstance(mhm_results_raw[0], list):
+            mhm_results_raw = mhm_results_raw[0]
 
-    mhm_results = []
-    for r in mhm_results_raw:
-        label = LABEL_MAP.get(r["label"], r["label"])
-        if r["score"] >= threshold and label != "neutral":
-            mhm_results.append({"label": label, "score": round(r["score"], 3)})
-    
-    return pii_results + mhm_results
+        for r in mhm_results_raw:
+            label = MENTAL_LABEL_MAP.get(r["label"])
+            if label and r["score"] >= threshold and label == "suicidal":
+                results.append({"label": label, "score": round(r["score"], 3)})
+
+
+    return results
 
 # Testing
 if __name__ == "__main__":
-    sample_text = "my name is shabbeer, my aadhar number is 1234 1234 1234, i feel sad and lonely and thinking of ending myself"
+    sample_text = "feeling very sad and lonely, feeling to end myself"
     result = detect_pii(sample_text)
     print(result)
