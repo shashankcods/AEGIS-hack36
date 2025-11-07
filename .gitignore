@@ -1,0 +1,97 @@
+# ==============================================
+# 🧠 AEGIS-HACK36 Backend (.gitignore)
+# ==============================================
+
+# --- Python & Django ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+build/
+dist/
+pip-wheel-metadata/
+
+# --- Virtual Environment ---
+venv/
+env/
+ENV/
+.venv/
+.python-version
+
+# --- Django Stuff ---
+*.log
+db.sqlite3
+media/
+staticfiles/
+static/
+local_settings.py
+
+# --- ML / Pathway / Logs ---
+logs/
+uploads/
+rules/__pycache__/
+ml_service/__pycache__/
+ml_service/detectors/__pycache__/
+pathway_engine/__pycache__/
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Environment Variables ---
+.env
+*.env
+
+# --- Temporary or Cache Files ---
+*.bak
+*.swp
+*.tmp
+*.cache
+*.orig
+*.log
+__MACOSX/
+
+# --- Coverage / Testing ---
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+
+# --- ML Artifacts ---
+checkpoints/
+runs/
+artifacts/
+*.model
+*.pth
+*.pt
+*.onnx
+*.h5
+*.pkl
+*.joblib
+
+# --- Node/Extension Frontend ---
+extension/node_modules/
+extension/dist/
+extension/.env
+extension/.next/
+extension/package-lock.json
+extension/yarn.lock
+
+# --- Misc ---
+tmp/
+output/
