@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Aegis - Capture LLM Chat",
+  "version": "0.1.0",
+  "description": "Capture chat text and attached files from ChatGPT (consent-first) and upload to backend.",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://chat.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Aegis"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chat.openai.com/*"],
+      "js": ["content_script.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://chat.openai.com/*"]
+    }
+  ]
+}
