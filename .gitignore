@@ -13,6 +13,7 @@ __pycache__/
 build/
 dist/
 pip-wheel-metadata/
+*.spec
 
 # --- Virtual Environment ---
 venv/
@@ -20,6 +21,8 @@ env/
 ENV/
 .venv/
 .python-version
+*/venv/
+*/env/
 
 # --- Django Stuff ---
 *.log
@@ -28,14 +31,47 @@ media/
 staticfiles/
 static/
 local_settings.py
+*.db
 
-# --- ML / Pathway / Logs ---
+# --- ML / Model Artifacts (Never Push to GitHub) ---
+# Local model directories
+ml_service/**/gliner-pii/
+ml_service/**/mental-health-model/
+ml_service/**/models/
+ml_service/**/checkpoints/
+ml_service/**/artifacts/
+
+# Weight / checkpoint file formats
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.h5
+*.ckpt
+*.onnx
+*.model
+*.pkl
+*.joblib
+*.tflite
+*.pb
+*.tar.gz
+*.zip
+*.bz2
+*.tar
+*.rar
+
+# ML runtime outputs
+runs/
+artifacts/
 logs/
 uploads/
-rules/__pycache__/
-ml_service/__pycache__/
-ml_service/detectors/__pycache__/
+cache/
+checkpoints/
+
+# --- Pathway Engine ---
 pathway_engine/__pycache__/
+pathway_engine/cache/
+pathway_engine/logs/
 
 # --- IDEs & Editors ---
 .vscode/
@@ -53,16 +89,15 @@ Desktop.ini
 .env
 *.env
 
-# --- Temporary or Cache Files ---
+# --- Temporary / Cache Files ---
 *.bak
 *.swp
 *.tmp
 *.cache
 *.orig
-*.log
 __MACOSX/
 
-# --- Coverage / Testing ---
+# --- Testing / Coverage ---
 .coverage
 htmlcov/
 .tox/
@@ -71,20 +106,9 @@ coverage.xml
 *.cover
 *.py,cover
 .pytest_cache/
+pytestdebug.log
 
-# --- ML Artifacts ---
-checkpoints/
-runs/
-artifacts/
-*.model
-*.pth
-*.pt
-*.onnx
-*.h5
-*.pkl
-*.joblib
-
-# --- Node/Extension Frontend ---
+# --- Node / Extension Frontend ---
 extension/node_modules/
 extension/dist/
 extension/.env
@@ -92,6 +116,8 @@ extension/.next/
 extension/package-lock.json
 extension/yarn.lock
 
-# --- Misc ---
+# --- Miscellaneous ---
 tmp/
 output/
+*.ipynb_checkpoints/
+*.log.*
