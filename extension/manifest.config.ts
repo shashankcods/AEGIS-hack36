@@ -1,15 +1,15 @@
-import { defineManifest } from '@crxjs/vite-plugin';
+// manifest.config.ts
 import pkg from './package.json';
 
-// We use defineManifest for type-safety and auto-completion
-export default defineManifest({
+const manifest: any = {
   manifest_version: 3,
-  name: pkg.name ?? 'AEGIS',
-  version: pkg.version ?? '0.0.0',
-  description: pkg.description ?? 'AEGIS extension (CRXJS build)',
+  name: (pkg as any).name ?? 'AEGIS',
+  version: (pkg as any).version ?? '0.0.0',
+  description: (pkg as any).description ?? 'AEGIS extension (CRXJS build)',
 
+  // Tell CRXJS where the popup source lives so it can be bundled.
   action: {
-    default_popup: 'popup.html',
+    default_popup: 'src/popup/index.html',
     default_icon: {
       '16': 'icons/icon16.png',
       '32': 'icons/icon32.png',
@@ -25,8 +25,8 @@ export default defineManifest({
     '128': 'icons/icon128.png'
   },
 
-  // ✅ UPDATED: Point service_worker to your source file in src/
   background: {
+    // point at your source service worker (js or ts)
     service_worker: 'src/background/index.js',
     type: 'module'
   },
@@ -34,13 +34,9 @@ export default defineManifest({
   content_scripts: [
     {
       matches: ['<all_urls>'],
-      // ✅ UPDATED: Point js to your source file in src/
-      js: ['src/content/content_script.js'],
+      js: ['src/content/content_script.ts'],
       run_at: 'document_idle'
     }
-    // ❗ NOTE: Your tree also has 'src/content/main.tsx'.
-    // If you want to use THAT file instead, change the js path above to:
-    // js: ['src/content/main.tsx'],
   ],
 
   permissions: [
@@ -57,10 +53,10 @@ export default defineManifest({
 
   web_accessible_resources: [
     {
-      // This is correct, it allows assets from your 'public/assets' or
-      // bundled assets (like images imported in React) to be loaded.
       resources: ['icons/*', 'assets/*'],
       matches: ['<all_urls>']
     }
   ]
-});
+};
+
+export default manifest;

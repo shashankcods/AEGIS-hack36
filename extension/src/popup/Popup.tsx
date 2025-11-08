@@ -1,133 +1,127 @@
-import React, { useEffect, useState } from "react";
-import "./popup.css";
+// extension/src/popup/Popup.tsx
+import { useEffect, useState } from 'react';
 
 type LogEntry = {
-  ts: string;
-  event: string;
+  ts: number;
+  type: string;
+  ok?: boolean;
   result?: any;
-  meta?: any;
+  error?: string;
+  text?: string;
+  filename?: string | null;
 };
 
-const STORAGE_ENABLED_KEY = "aegis_enabled";
+function formatTs(ts: number) {
+  const d = new Date(ts);
+  return d.toLocaleString();
+}
 
 export default function Popup() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [enabled, setEnabled] = useState<boolean>(true);
-  const [status, setStatus] = useState<string>("idle");
+  const [loading, setLoading] = useState(false);
+  const [lastMsg, setLastMsg] = useState<string>('');
 
-  // load enabled flag from storage
   useEffect(() => {
-    chrome.storage.local.get([STORAGE_ENABLED_KEY], (items) => {
-      if (items && typeof items[STORAGE_ENABLED_KEY] !== "undefined") {
-        setEnabled(Boolean(items[STORAGE_ENABLED_KEY]));
+    fetchLogs();
+    const listener = (msg: any) => {
+      if (msg && msg.type === 'UPLOAD_RESULT') {
+        setLogs(prev => [{ ts: Date.now(), type: 'UPLOAD_RESULT', ok: !!msg.result, result: msg.result, error: msg.error }, ...prev].slice(0, 50));
       }
-    });
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    return () => {
+      chrome.runtime.onMessage.removeListener(listener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // subscribe to background messages
-  useEffect(() => {
-    function onMsg(msg: any) {
-      if (!msg) return;
-      if (msg.type === "UPLOAD_RESULT") {
-        const e: LogEntry = { ts: new Date().toLocaleTimeString(), event: "upload_result", result: msg.result };
-        setLogs((p) => [e, ...p].slice(0, 100));
-        setStatus("received");
-        setTimeout(() => setStatus("idle"), 1200);
-      }
-      if (msg.type === "NEW_CAPTURE") {
-        const e: LogEntry = { ts: new Date().toLocaleTimeString(), event: "capture", meta: msg.entry };
-        setLogs((p) => [e, ...p].slice(0, 100));
-      }
+  async function fetchLogs() {
+    setLoading(true);
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tab = tabs[0];
+        const tabId = tab?.id ?? 'global';
+        chrome.runtime.sendMessage({ type: 'GET_LOGS', tabId }, (resp) => {
+          if (chrome.runtime.lastError) {
+            setLastMsg(String(chrome.runtime.lastError.message));
+            setLoading(false);
+            return;
+          }
+          if (resp?.ok) {
+            // Show newest first
+            setLogs((resp.logs || []).slice().reverse());
+          } else {
+            setLastMsg('no logs');
+          }
+          setLoading(false);
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
     }
-    chrome.runtime.onMessage.addListener(onMsg);
-    // request recent logs immediately
-    chrome.runtime.sendMessage({ type: "GET_LOGS" }, (resp) => {
-      try {
-        if (resp && resp.ok && Array.isArray(resp.logs)) {
-          const fromServer = resp.logs.map((l: any) => ({ ts: new Date(l.ts).toLocaleTimeString(), event: "history", meta: l }));
-          setLogs((p) => [...fromServer.reverse(), ...p].slice(0, 100));
-        }
-      } catch (e) {}
-    });
-    return () => chrome.runtime.onMessage.removeListener(onMsg);
-  }, []);
-
-  // toggle extension enabled flag
-  function toggleEnabled() {
-    const next = !enabled;
-    chrome.storage.local.set({ [STORAGE_ENABLED_KEY]: next }, () => {
-      setEnabled(next);
-    });
   }
 
-  // manual capture: execute a small script in the active tab to call window.AEGIS_manualCapture() or dispatch an event
-  async function manualCapture() {
-    setStatus("sending");
+  function manualCapture() {
+    setLastMsg('');
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (!tab?.id) return setStatus("idle");
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tab.id },
-          func: () => {
-            // prefer direct function if present
-            try {
-              // @ts-ignore
-              if (window.AEGIS_manualCapture) return window.AEGIS_manualCapture();
-            } catch (_){}
-            // fallback: dispatch a page event your content_script can listen to
-            window.dispatchEvent(new CustomEvent("AEGIS_REQUEST_MANUAL_UPLOAD_FROM_PAGE"));
-            return { ok: true, note: "dispatched" };
-          },
-        },
-        () => {
-          setStatus("sent");
-          setTimeout(() => setStatus("idle"), 800);
+      const tab = tabs[0];
+      if (!tab || !tab.id) {
+        setLastMsg('no active tab');
+        return;
+      }
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          // @ts-ignore
+          if ((window as any).AEGIS_manualCapture) {
+            // @ts-ignore
+            return (window as any).AEGIS_manualCapture();
+          } else {
+            return { ok: false, error: 'no-capture-fn' };
+          }
         }
-      );
+      }, () => {
+        if (chrome.runtime.lastError) {
+          setLastMsg('capture failed: ' + chrome.runtime.lastError.message);
+        } else {
+          setLastMsg('capture requested');
+          fetchLogs();
+        }
+      });
     });
-  }
-
-  // clear logs
-  function clearLogs() {
-    setLogs([]);
   }
 
   return (
-    <div className="aegis-popup-root">
-      <div className="aegis-header">
-        <div className="aegis-title">AEGIS</div>
-        <div className="aegis-controls">
-          <label className="toggle">
-            <input type="checkbox" checked={enabled} onChange={toggleEnabled} />
-            <span className="slider" />
-            <span className="label">{enabled ? "On" : "Off"}</span>
-          </label>
+    <div className="popup-root">
+      <header className="popup-header">
+        <h3>AEGIS</h3>
+        <button onClick={manualCapture} className="primary">Capture</button>
+      </header>
+
+      <section className="popup-body">
+        <div className="controls">
+          <button onClick={fetchLogs}>Refresh</button>
+          <span className="status">{loading ? 'loading...' : lastMsg}</span>
         </div>
-      </div>
 
-      <div className="aegis-sub">
-        <button className="btn primary" onClick={manualCapture}>Manual capture</button>
-        <button className="btn" onClick={() => chrome.runtime.sendMessage({ type: "GET_LOGS" }, (r)=>{})}>Get logs</button>
-        <button className="btn ghost" onClick={clearLogs}>Clear</button>
-        <div className={`status-badge ${status}`}>{status === "idle" ? "idle" : status}</div>
-      </div>
+        <ul className="log-list">
+          {logs.length === 0 && <li className="empty">No logs yet</li>}
+          {logs.map((l, idx) => (
+            <li key={idx} className="log-entry">
+              <div className="log-meta">
+                <strong>{l.type}</strong> <span className="ts">{formatTs(l.ts)}</span>
+              </div>
+              {l.text && <div className="log-text">{l.text}</div>}
+              {l.result && <pre className="log-result">{JSON.stringify(l.result, null, 2)}</pre>}
+              {l.error && <div className="log-error">{l.error}</div>}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      <div className="aegis-log">
-        {logs.length === 0 && <div className="aegis-empty">No logs yet — trigger a capture</div>}
-        {logs.map((l, i) => (
-          <div className="aegis-log-entry" key={i}>
-            <div className="meta">
-              <span className="evt">{l.event}</span>
-              <span className="ts">{l.ts}</span>
-            </div>
-            <pre className="json">{JSON.stringify(l.result ?? l.meta ?? {}, null, 2)}</pre>
-          </div>
-        ))}
-      </div>
-
-      <footer className="aegis-footer">
-        <small>AEGIS — live prompt logger</small>
+      <footer className="popup-footer">
+        <small>AEGIS • local dev</small>
       </footer>
     </div>
   );

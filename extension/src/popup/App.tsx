@@ -1,46 +1,22 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>AEGIS</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <div id="root" class="aegis-popup-root" role="dialog" aria-label="AEGIS popup">
-      <header class="aegis-header">
-        <div class="aegis-brand">
-          <img src="icons/logo32.png" alt="AEGIS" class="aegis-logo-img" />
-          <div class="aegis-title-wrap">
-            <div class="aegis-title">AEGIS</div>
-            <div class="aegis-subtitle">Prompt PII Detector</div>
-          </div>
-        </div>
+import crxLogo from '@/assets/crx.svg'
+import reactLogo from '@/assets/react.svg'
+import viteLogo from '@/assets/vite.svg'
+import HelloWorld from '@/components/HelloWorld'
+import './App.css'
 
-        <div class="aegis-header-right">
-          <label class="switch" title="Enable / disable AEGIS">
-            <input id="toggleEnabled" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-        </div>
-      </header>
-
-      <div class="aegis-controls">
-        <button id="btnManual" class="btn primary">Manual capture</button>
-        <button id="btnGetLogs" class="btn">Get logs</button>
-        <div id="status" class="status">idle</div>
-      </div>
-
-      <section class="aegis-history" id="logArea" aria-live="polite">
-        <div id="empty" class="aegis-empty">No logs yet — trigger a capture or wait for an upload result.</div>
-      </section>
-
-      <footer class="aegis-footer">
-        <small>AEGIS — local prompt logger · keep it private</small>
-      </footer>
+export default function App() {
+  return (
+    <div>
+      <a href="https://vite.dev" target="_blank" rel="noreferrer">
+        <img src={viteLogo} className="logo" alt="Vite logo" />
+      </a>
+      <a href="https://reactjs.org/" target="_blank" rel="noreferrer">
+        <img src={reactLogo} className="logo react" alt="React logo" />
+      </a>
+      <a href="https://crxjs.dev/vite-plugin" target="_blank" rel="noreferrer">
+        <img src={crxLogo} className="logo crx" alt="crx logo" />
+      </a>
+      <HelloWorld msg="Vite + React + CRXJS" />
     </div>
-
-    <script src="popup.js"></script>
-  </body>
-</html>
+  )
+}
