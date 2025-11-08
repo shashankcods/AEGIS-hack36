@@ -9,6 +9,19 @@ gliner==0.2.22
 sentencepiece>=0.2.0
 numpy==1.26.4
 
+# --- OCR and Image Processing ---
+paddleocr==2.9.1
+paddlepaddle>=2.6.0
+Pillow==10.3.0
+pdf2image==1.17.0
+python-magic==0.4.27
+
 # --- Utilities ---
 requests==2.31.0
 python-dotenv==1.0.1
+
+# --- Notes ---
+# To use pdf2image, make sure 'poppler-utils' is installed on your system:
+# macOS: brew install poppler
+# Ubuntu: sudo apt-get install poppler-utils
+# Windows: download from http://blog.alivate.com.au/poppler-windows/
