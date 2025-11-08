@@ -3,7 +3,7 @@
 # ==============================================
 
 # --- Python & Django ---
-_pycache_/
+__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -37,6 +37,8 @@ local_settings.py
 # Local model directories
 ml_service/**/gliner-pii/
 ml_service/**/mental-health-model/
+backend/ml_service/**/gliner-pii/
+backend/ml_service/**/mental-health-model/
 ml_service/**/models/
 ml_service/**/checkpoints/
 ml_service/**/artifacts/
@@ -69,7 +71,7 @@ cache/
 checkpoints/
 
 # --- Pathway Engine ---
-pathway_engine/_pycache_/
+pathway_engine/__pycache__/
 pathway_engine/cache/
 pathway_engine/logs/
 
@@ -120,7 +122,6 @@ extension/yarn.lock
 tmp/
 output/
 *.ipynb_checkpoints/
-.log.
 
 .venv
 .venv-ubuntu

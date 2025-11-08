@@ -10,29 +10,40 @@ import magic
 import torch
 import tempfile, os, time
 
-
-# Loading PII model
-print("Loading GLiNER PII model...")
-# Local model path
-LOCAL_MODEL_PATH = os.path.join(os.path.dirname(__file__), "gliner-pii")
+# ==============================
+# Model Setup
+# ==============================
 
 # Device setup
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Try local load first, fallback to cloud
-try:
-    if os.path.exists(LOCAL_MODEL_PATH) and os.path.isdir(LOCAL_MODEL_PATH):
-        print(f"Attempting to load local GLiNER model from: {LOCAL_MODEL_PATH}")
-        gliner_model = GLiNER.from_pretrained(LOCAL_MODEL_PATH, local_files_only=True).to(device)
-        print("✅ Local GLiNER model loaded successfully.")
-    else:
-        raise FileNotFoundError
-except Exception as e:
-    print(f"⚠️ Local model not found or failed ({e}). Falling back to cloud.")
-    gliner_model = GLiNER.from_pretrained("nvidia/gliner-pii").to(device)
-    print("☁️ Cloud model loaded successfully.")
+# ------------------------------
+# Load GLiNER PII Model
+# ------------------------------
+print("Loading GLiNER PII model...")
+LOCAL_GLINER_PATH = os.path.join(os.path.dirname(__file__), "gliner-pii")
 
-# PII labels to detect
+def load_gliner_model():
+    try:
+        # Check if local model exists and has weights
+        weight_path = os.path.join(LOCAL_GLINER_PATH, "pytorch_model.bin")
+        if os.path.exists(weight_path):
+            print(f"✅ Found local GLiNER model at: {LOCAL_GLINER_PATH}")
+            model = GLiNER.from_pretrained(LOCAL_GLINER_PATH, local_files_only=True).to(device)
+            print("✅ Local GLiNER model loaded successfully.")
+            return model
+        else:
+            raise FileNotFoundError("Local GLiNER model files missing.")
+    except Exception as e:
+        print(f"⚠️ Local load failed ({e}). Falling back to cloud...")
+        model = GLiNER.from_pretrained("nvidia/gliner-pii").to(device)
+        print("☁️ Cloud GLiNER model loaded successfully.")
+        return model
+
+gliner_model = load_gliner_model()
+
+
+# PII Labels
 LABELS = [
     "name", "given_name", "surname",
     "date_of_birth", "age", "email", "phone_number",
@@ -45,34 +56,42 @@ LABELS = [
 ]
 
 
-# Loading Mental-health classifier
+# ------------------------------
+# Load Mental Health Classifier
+# ------------------------------
 print("Loading Mental-health classifier...")
-# Define path for local copy
-MENTAL_MODEL_PATH = os.path.join(os.path.dirname(__file__), "mental-health-model")
+LOCAL_MENTAL_PATH = os.path.join(os.path.dirname(__file__), "mental-health-model")
 
-try:
-    if os.path.exists(MENTAL_MODEL_PATH) and os.path.isdir(MENTAL_MODEL_PATH):
-        print(f"Attempting to load local Mental-health model from: {MENTAL_MODEL_PATH}")
-        mental_health_model = pipeline(
+def load_mental_health_model():
+    try:
+        config_path = os.path.join(LOCAL_MENTAL_PATH, "config.json")
+        weights_path = os.path.join(LOCAL_MENTAL_PATH, "model.safetensors")
+
+        if os.path.exists(config_path) and os.path.exists(weights_path):
+            print(f"✅ Found local Mental-health model at: {LOCAL_MENTAL_PATH}")
+            model = pipeline(
+                "text-classification",
+                model=LOCAL_MENTAL_PATH,
+                tokenizer=LOCAL_MENTAL_PATH,
+                top_k=None
+            )
+            print("✅ Local Mental-health classifier loaded successfully.")
+            return model
+        else:
+            raise FileNotFoundError("Mental model files missing locally.")
+    except Exception as e:
+        print(f"⚠️ Local model not found or failed ({e}). Falling back to cloud...")
+        model = pipeline(
             "text-classification",
-            model=MENTAL_MODEL_PATH,
-            tokenizer=MENTAL_MODEL_PATH,
+            model="Akashpaul123/bert-suicide-detection",
+            tokenizer="Akashpaul123/bert-suicide-detection",
             top_k=None
         )
-        print("✅ Local Mental-health classifier loaded successfully.")
-    else:
-        raise FileNotFoundError("Local model path not found.")
-except Exception as e:
-    print(f"⚠️ Local model not found or failed ({e}). Falling back to cloud.")
-    mental_health_model = pipeline(
-        "text-classification",
-        model="Akashpaul123/bert-suicide-detection",
-        tokenizer="Akashpaul123/bert-suicide-detection",
-        top_k=None
-    )
-    print("☁️ Cloud Mental-health classifier loaded successfully.")
+        print("☁️ Cloud Mental-health classifier loaded successfully.")
+        return model
 
-# Mental-health labeling
+mental_health_model = load_mental_health_model()
+
 MENTAL_LABEL_MAP = {
     "LABEL_0": "non_suicidal",
     "LABEL_1": "suicidal",
@@ -81,12 +100,16 @@ MENTAL_LABEL_MAP = {
 }
 
 
-# Initializing PaddleOCR for image-text
+# ------------------------------
+# OCR Engine
+# ------------------------------
 print("Initializing PaddleOCR...")
 ocr = PaddleOCR(use_textline_orientation=True, lang='en')
 
 
-# Helper Functions for processing of images
+# ==============================
+# Helper Functions
+# ==============================
 def preprocess_image(image: Image.Image) -> Image.Image:
     img = image.convert("RGB")
     img = ImageEnhance.Contrast(img).enhance(1.3)
@@ -99,6 +122,7 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r'[^a-zA-Z0-9\s@.:/\-]', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
+
 
 def extract_text_from_image(image: Image.Image) -> str:
     result = ocr.ocr(np.array(image))
@@ -115,11 +139,13 @@ def extract_text_from_image(image: Image.Image) -> str:
                             texts.append(val)
     return " ".join(t.strip() for t in texts if isinstance(t, str) and t.strip())
 
-# Text-analysing function
+
+# ==============================
+# Analysis Logic
+# ==============================
 def analyze_text(text: str, threshold: float = 0.5) -> dict:
     pii_entities = gliner_model.predict_entities(text, LABELS, threshold=threshold)
-    pii_results = [{"label": e["label"], "score": round(e["score"], 3)} for e in pii_entities]
-    results = pii_results
+    results = [{"label": e["label"], "score": round(e["score"], 3)} for e in pii_entities]
 
     sentences = [s.strip() for s in re.split(r'[.!?]', text) if s.strip()]
     for sentence in sentences:
@@ -132,19 +158,20 @@ def analyze_text(text: str, threshold: float = 0.5) -> dict:
             if label and r["score"] >= threshold and label == "suicidal":
                 results.append({"label": label, "score": round(r["score"], 3)})
 
-
     return results
 
-# Main function
+
+# ==============================
+# Unified Detection Function
+# ==============================
 def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
     try:
-        # Case 1: Plain Text
+        # Case 1: Text
         if isinstance(input_data, str):
             cleaned_text = clean_ocr_text(input_data)
-            analysis = analyze_text(cleaned_text, threshold)
-            return analysis
+            return analyze_text(cleaned_text, threshold)
 
-        # Case 2: File Bytes (image/pdf)
+        # Case 2: File (image/pdf)
         elif isinstance(input_data, (bytes, bytearray)):
             file_type = (magic.from_buffer(input_data[:2048], mime=True) or "").lower()
             extracted_text = ""
@@ -155,21 +182,8 @@ def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
                 extracted_text = extract_text_from_image(img)
 
             elif "pdf" in file_type:
-                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                    tmp.write(input_data)
-                    tmp_path = tmp.name
-
                 pages = convert_from_bytes(input_data, dpi=150, first_page=1, last_page=max_pages, fmt="jpeg")
-                page_texts = []
-                for page in pages:
-                    processed = preprocess_image(page)
-                    page_texts.append(extract_text_from_image(processed))
-                extracted_text = " ".join(page_texts)
-
-                try:
-                    os.remove(tmp_path)
-                except Exception:
-                    pass
+                extracted_text = " ".join(extract_text_from_image(preprocess_image(p)) for p in pages)
 
             else:
                 return {"error": f"Unsupported file type: {file_type or 'unknown'}"}
@@ -177,10 +191,7 @@ def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
             if not extracted_text.strip():
                 return {"error": "No text detected in file."}
 
-            cleaned_text = clean_ocr_text(extracted_text)
-            analysis = analyze_text(cleaned_text, threshold)
-
-            return analysis
+            return analyze_text(clean_ocr_text(extracted_text), threshold)
 
         else:
             return {"error": "Unsupported input type. Must be string or bytes."}
@@ -189,22 +200,10 @@ def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
         return {"error": str(e)}
 
 
-
-# Testing
+# ==============================
+# Test Run
+# ==============================
 if __name__ == "__main__":
-    '''
-    # --- TEXT TEST ---
-    sample_text = "feeling very sad and lonely, feeling to end myself"
-    text_result = detect_pii(sample_text)
+    sample_text = "My name is Harish Raju, I live in Lucknow, and I feel really depressed lately."
     print("\n TEXT RESULT:")
-    print(text_result)
-    '''
-
-    # --- IMAGE TEST ---
-    image_path = "id_card.pdf"
-    with open(image_path, "rb") as f:
-        file_bytes = f.read()
-
-    image_result = detect_pii(file_bytes)
-    print("\n IMAGE RESULT:")
-    print(image_result)
+    print(detect_pii(sample_text))
