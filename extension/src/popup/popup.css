@@ -1,96 +1,116 @@
-/* src/popup/popup.css
-   Minimal styles so UI looks consistent even if Tailwind isn't present.
-   Colors: dark navy / slate + neon accents to match your popup design.
-*/
-
 :root{
-  --bg-1: #071026;
-  --bg-2: #0b1220;
-  --card: #0f1724;
-  --muted: #9CA3AF;
-  --text: #E6EEF8;
-  --accent: #7C3AED;
-  --accent-2: #7DD3FC;
-  --green: #34D399;
-  --amber: #F59E0B;
-  --red: #EF4444;
+  --bg:#071028;
+  --panel:#071426;
+  --muted:#9fb0d6;
+  --accent-1:#2b4fa8;
+  --accent-2:#1f365f;
+  --card:#0f2138;
+  --glass: rgba(255,255,255,0.02);
+  --text:#e6eef8;
 }
 
-.popup-root{
-  width: 420px;
-  padding: 14px;
-  background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
-  color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(2,6,23,0.7);
-  box-sizing: border-box;
+/* reset */
+*{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; padding:0;}
+
+.aegis-popup-root{
+  width:440px;
+  height:540px;
+  background: linear-gradient(180deg, #071028 0%, #051423 100%);
+  color:var(--text);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  border-radius:20px;
+  box-shadow: 0 18px 48px rgba(2,6,18,0.65), inset 0 1px 0 rgba(255,255,255,0.02);
+  overflow: hidden;
 }
 
 /* header */
-.popup-header{
+.aegis-header{
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  gap:10px;
-  margin-bottom:12px;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:6px;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
 }
-.title{ font-size:16px; font-weight:700; margin:0; }
-.subtitle{ font-size:11px; color:var(--muted); margin-top:4px; }
+.aegis-brand{ display:flex; align-items:center; gap:10px; }
+.aegis-logo-img{ width:36px; height:36px; border-radius:8px; object-fit:cover; box-shadow: 0 6px 18px rgba(2,8,20,0.5); }
+.aegis-title-wrap{ display:flex; flex-direction:column; line-height:1; }
+.aegis-title{ font-weight:800; font-size:16px; letter-spacing:0.6px; }
+.aegis-subtitle{ font-size:11px; color:var(--muted); margin-top:2px; }
 
-.header-actions .btn{ margin-left:6px; }
+/* header right */
+.aegis-header-right{ display:flex; align-items:center; gap:6px; }
 
-/* main row */
-.main-row{ display:flex; gap:12px; }
-.gauge-col{ width:140px; display:flex; flex-direction:column; align-items:center; }
-.leak-count{ margin-top:8px; font-size:13px; color:var(--muted); }
-.leak-num{ font-weight:700; color:var(--accent-2); }
+/* toggle */
+.switch { position: relative; display: inline-block; width:46px; height:26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--card); transition: .18s; border-radius: 999px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.slider:before {
+  position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+  background: #fff; border-radius: 50%; transition: .18s;
+}
+.switch input:checked + .slider { background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); }
+.switch input:checked + .slider:before { transform: translateX(20px); }
 
 /* controls */
-.controls-col{ flex:1; }
-.controls{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-.last-scan{ margin-left:auto; font-size:11px; color:var(--muted); }
+.aegis-controls{ display:flex; gap:8px; align-items:center; padding:12px 0; }
+.btn{
+  background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.06);
+  padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btn:active{ transform: translateY(1px); }
+.btn.primary{ background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); border:none; box-shadow: 0 10px 28px rgba(30,60,120,0.18); }
 
-.input-area{
-  width:100%;
-  background: #071427;
+.status{ margin-left:auto; font-size:12px; color:var(--muted); padding:6px 10px; background:var(--glass); border-radius:10px; }
+
+/* history / logs */
+.aegis-history{
+  flex:1;
+  overflow:auto;
+  padding:12px;
+  background: linear-gradient(180deg, rgba(6,14,30,0.14), rgba(6,10,20,0.06));
+  border-radius:12px;
   border: 1px solid rgba(255,255,255,0.02);
+  margin-bottom:10px;
+}
+
+/* when empty */
+.aegis-empty{ color:var(--muted); padding:1.2rem; text-align:center; }
+
+/* each log entry */
+.log-entry{
+  background: linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.008));
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  box-shadow: 0 6px 18px rgba(2,6,20,0.22);
+  border:1px solid rgba(255,255,255,0.02);
+}
+
+/* meta row */
+.log-meta{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; }
+.log-meta .evt{ font-weight:700; text-transform:capitalize; color:#cfe8ff; }
+.log-meta .ts{ margin-left:auto; color:rgba(255,255,255,0.38); }
+
+/* JSON area */
+.log-json{
+  background: rgba(0,0,0,0.15);
   padding:8px;
   border-radius:8px;
-  color:var(--text);
-  font-size:13px;
-  margin-bottom:8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  font-size:12px;
+  color: #e6eef8;
+  white-space:pre-wrap; word-break:break-word; max-height:220px; overflow:auto;
 }
-
-/* analyze row */
-.analyze-row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
-
-/* log */
-.log-section{ margin-top:12px; background: rgba(255,255,255,0.02); padding:8px; border-radius:8px; max-height:200px; overflow:auto; }
-.log-header{ font-size:13px; color:var(--muted); margin-bottom:6px; }
-.log-row{ display:flex; justify-content:space-between; gap:8px; padding:8px 6px; border-bottom:1px dashed rgba(255,255,255,0.02); }
-.log-left{ flex:1; }
-.log-type{ font-size:13px; font-weight:600; color:var(--text); }
-.log-count{ font-size:12px; color:var(--muted); margin-left:6px; }
-.log-ts{ font-size:11px; color:var(--muted); margin-top:4px; }
-.log-ex{ font-size:11px; color:#9AB0C8; margin-top:6px; }
-.log-empty{ color:var(--muted); font-size:13px; padding:8px; }
-
-/* buttons */
-.btn{
-  padding:6px 10px;
-  border-radius:8px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.03);
-  color: var(--text);
-  cursor:pointer;
-  font-size:13px;
-}
-.btn.primary{ background: linear-gradient(90deg, var(--accent), #4F46E5); border:none; }
-.btn.success{ background: linear-gradient(90deg, #10B981, #059669); border:none; }
-.btn.ghost{ background: transparent; border: 1px solid rgba(255,255,255,0.03); color:var(--muted); }
-.btn.danger{ background: linear-gradient(90deg,#EF4444,#F97316); border:none; }
-.btn.tiny{ padding:5px 8px; font-size:12px; border-radius:6px; }
 
 /* footer */
-.footer-note{ margin-top:10px; font-size:11px; color:var(--muted); text-align:center; }
+.aegis-footer{ text-align:center; font-size:11px; color:rgba(255,255,255,0.32); }

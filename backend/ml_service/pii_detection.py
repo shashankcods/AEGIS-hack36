@@ -45,7 +45,7 @@ gliner_model = load_gliner_model()
 
 # PII Labels
 LABELS = [
-    "name", "given_name", "surname",
+    "name", "surname",
     "date_of_birth", "age", "email", "phone_number",
     "address", "city", "state", "zip_code", "ip_address", "url",
     "account_number", "credit_card_number", "bank_name", "pan_number", "ssn",
@@ -93,10 +93,10 @@ def load_mental_health_model():
 mental_health_model = load_mental_health_model()
 
 MENTAL_LABEL_MAP = {
-    "LABEL_0": "non_suicidal",
-    "LABEL_1": "suicidal",
-    "label_0": "non_suicidal",
-    "label_1": "suicidal"
+    "LABEL_0": "non_emotional_distress",
+    "LABEL_1": "emotional_distress",
+    "label_0": "non_emotional_distress",
+    "label_1": "emotional_distress"
 }
 
 
@@ -155,7 +155,7 @@ def analyze_text(text: str, threshold: float = 0.5) -> dict:
 
         for r in mhm_results_raw:
             label = MENTAL_LABEL_MAP.get(r["label"])
-            if label and r["score"] >= threshold and label == "suicidal":
+            if label and r["score"] >= threshold and label == "emotional_distress":
                 results.append({"label": label, "score": round(r["score"], 3)})
 
     return results
