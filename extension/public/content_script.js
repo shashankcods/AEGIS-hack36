@@ -3,11 +3,11 @@
   const DEBUG_TAG = '[Aegis content_script]';
   const ROOT_SELECTOR = '#prompt-textarea';
   const OVERLAY_ID = 'aegis-overlay-logger';
-  const MAX_TRANSFER_BYTES = 8 * 1024 * 1024; // 8 MB total safe transfer (tweak as needed)
+  const MAX_TRANSFER_BYTES = 8 * 1024 * 1024; // 8 MB safe limit
 
   function d(...a) { console.log(DEBUG_TAG, ...a); }
 
-  // overlay creation (idempotent)
+  // ===== Overlay UI =====
   function createOverlay() {
     let o = document.getElementById(OVERLAY_ID);
     if (o) return o;
@@ -28,13 +28,20 @@
     const btn = document.createElement('button');
     btn.textContent = 'Hide';
     Object.assign(btn.style, { fontSize: '12px', padding: '4px 8px', cursor: 'pointer' });
-    btn.onclick = () => { o.style.display = (o.style.display === 'none') ? '' : 'none'; btn.textContent = (o.style.display === 'none') ? 'Show' : 'Hide'; };
+    btn.onclick = () => {
+      o.style.display = (o.style.display === 'none') ? '' : 'none';
+      btn.textContent = (o.style.display === 'none') ? 'Show' : 'Hide';
+    };
     head.appendChild(btn);
     o.appendChild(head);
 
     const promptEl = document.createElement('pre');
     promptEl.id = OVERLAY_ID + '-prompt';
-    Object.assign(promptEl.style, { whiteSpace: 'pre-wrap', margin: 0, padding: '6px', background: '#0b1730', borderRadius: '6px', maxHeight: '6em', overflow: 'auto' });
+    Object.assign(promptEl.style, {
+      whiteSpace: 'pre-wrap', margin: 0, padding: '6px',
+      background: '#0b1730', borderRadius: '6px',
+      maxHeight: '6em', overflow: 'auto'
+    });
     promptEl.textContent = 'Waiting for prompt...';
     o.appendChild(promptEl);
 
@@ -48,6 +55,12 @@
     return o;
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+  }
+
+  // ===== Text helpers =====
   function findParagraph() {
     const root = document.querySelector(ROOT_SELECTOR);
     if (!root) return null;
@@ -58,11 +71,10 @@
     return (p.innerText ?? p.textContent ?? '').replace(/\u00A0/g, '');
   }
 
-  // staged files: { name, type, size, buffer: ArrayBuffer }
+  // ===== State =====
   const stagedFiles = [];
 
   async function fileToArrayBuffer(file) {
-    // File.arrayBuffer is modern and fast
     return await file.arrayBuffer();
   }
 
@@ -78,165 +90,80 @@
     stagedFiles.forEach((f, i) => {
       const row = document.createElement('div');
       row.style.marginBottom = '6px';
-      row.innerHTML = `<div style="font-weight:700">${i+1}. ${escapeHtml(f.name)}</div>
-                       <div style="font-size:11px;color:#9fb0d6">${f.type || 'unknown'} — ${Math.round((f.size||0)/1024)} KB</div>`;
+      row.innerHTML = `<div style="font-weight:700">${i + 1}. ${escapeHtml(f.name)}</div>
+                       <div style="font-size:11px;color:#9fb0d6">${f.type || 'unknown'} — ${Math.round((f.size || 0) / 1024)} KB</div>`;
       el.appendChild(row);
     });
   }
-  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
 
   function consoleProof(source, text, files) {
     const excerpt = (text || '').slice(0, 300);
-    console.groupCollapsed('%cAEGIS capture — ' + source, 'background:#071028;color:#cfe8ff;padding:4px;border-radius:4px');
+    console.groupCollapsed('%cAEGIS capture — ' + source,
+      'background:#071028;color:#cfe8ff;padding:4px;border-radius:4px');
     console.log('excerpt:', excerpt);
-    if (files && files.length) console.log('files:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
-    console.log('full text:', text);
+    if (files && files.length)
+      console.log('files:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
     console.groupEnd();
   }
 
-  // Sends capture to background and returns a Promise resolving with background response
+  // ===== Message sender =====
   function sendToBackground(text, files, source) {
     consoleProof(source, text, files);
-
     return new Promise((resolve, reject) => {
       try {
-        // Prepare a light payload: files as {name,type,size,buffer}
         const payload = {
           text: text || '',
-          files: (files || []).map(f => ({ name: f.name, type: f.type, size: f.size, buffer: f.buffer }))
+          // serialize ArrayBuffers → number arrays
+          files: (files || []).map(f => ({
+            name: f.name,
+            type: f.type,
+            size: f.size,
+            buffer: f.buffer ? Array.from(new Uint8Array(f.buffer)) : null
+          }))
         };
 
         chrome.runtime.sendMessage({ type: 'UPLOAD_CANDIDATE', payload, source }, (resp) => {
           const last = chrome.runtime.lastError;
-          if (last) {
-            d('chrome.runtime.lastError', last);
-            return reject(new Error('runtime.sendMessage lastError: ' + last.message));
-          }
+          if (last) return reject(new Error('runtime.sendMessage: ' + last.message));
           if (!resp) return reject(new Error('no response from background'));
           if (resp.ok) return resolve(resp);
-          return reject(new Error(resp.error || 'upload failed'));
+          reject(new Error(resp.error || 'upload failed'));
         });
-      } catch (e) {
-        d('sendToBackground exception', e);
-        reject(e);
-      }
+      } catch (e) { reject(e); }
     });
   }
 
+  // ===== Inject fetch interceptor (detect ChatGPT hidden uploads) =====
+  try {
+    const s = document.createElement('script');
+    s.src = chrome.runtime.getURL('intercept_inject.js');
+    (document.head || document.documentElement).appendChild(s);
+    d('Injected fetch interceptor script');
+  } catch (e) { d('injector error', e); }
+
+  // Listen for intercept messages from injected script
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.aegisIntercept && e.data.fileMeta) {
+      const meta = e.data.fileMeta;
+      d('Intercepted ChatGPT upload via fetch:', meta);
+      stagedFiles.push({
+        name: meta.name,
+        type: meta.type,
+        size: meta.size,
+        buffer: null // cannot access real blob; just metadata
+      });
+      updateOverlayFiles();
+      sendToBackground('', stagedFiles.slice(), 'fetch-intercept')
+        .catch(err => d('bg send err', err));
+    }
+  });
+
+  // ===== Watcher for text, paste, drop =====
   let last = '';
   (function attachWatcher() {
     createOverlay();
     let paragraph = findParagraph();
     let paragraphObserver = null;
-    let rootObserver = null;
-    let attempts = 0;
-
-    function start() {
-      const root = document.querySelector(ROOT_SELECTOR);
-      if (!root && attempts < 40) { attempts++; setTimeout(start, 200); return; }
-      if (!root) { d('prompt root not found:', ROOT_SELECTOR); updateOverlayPrompt('Prompt root not found'); return; }
-
-      root.addEventListener('input', () => { paragraph = findParagraph(); onChange('root-input'); }, { passive: true });
-      root.addEventListener('keyup', () => { paragraph = findParagraph(); onChange('root-keyup'); }, { passive: true });
-
-      rootObserver = new MutationObserver(() => {
-        const newP = findParagraph();
-        if (newP !== paragraph) {
-          paragraph = newP;
-          onChange('root-mutation');
-          if (paragraphObserver) { try { paragraphObserver.disconnect(); } catch(e) {} paragraphObserver = null; }
-          if (paragraph) {
-            paragraphObserver = new MutationObserver(() => onChange('paragraph-mutation'));
-            paragraphObserver.observe(paragraph, { characterData: true, childList: true, subtree: true });
-          }
-        }
-      });
-      rootObserver.observe(root, { childList: true, subtree: false });
-
-      paragraph = findParagraph();
-      if (paragraph) {
-        onChange('initial-read');
-        paragraphObserver = new MutationObserver(() => onChange('paragraph-mutation'));
-        paragraphObserver.observe(paragraph, { characterData: true, childList: true, subtree: true });
-      }
-
-      // hook file inputs
-      function hookFileInputs() {
-        document.querySelectorAll('input[type="file"]').forEach(input => {
-          if (input.__aegis_hooked) return;
-          input.__aegis_hooked = true;
-          input.addEventListener('change', async () => {
-            try {
-              const arr = Array.from(input.files || []);
-              for (const f of arr) {
-                const buffer = await fileToArrayBuffer(f);
-                stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
-              }
-              updateOverlayFiles();
-              onChange('file-input-change');
-            } catch (e) { d('file change err', e); }
-          });
-        });
-      }
-      hookFileInputs();
-      setTimeout(hookFileInputs, 700);
-      setTimeout(hookFileInputs, 2500);
-      setInterval(hookFileInputs, 3500);
-
-      // paste handling
-      document.addEventListener('paste', async (ev) => {
-        try {
-          const items = ev.clipboardData && ev.clipboardData.items;
-          if (!items) return;
-          for (const it of items) {
-            if (it.kind === 'file') {
-              const f = it.getAsFile();
-              if (f) {
-                const buffer = await fileToArrayBuffer(f);
-                stagedFiles.push({ name: f.name || 'clipboard', type: f.type, size: f.size, buffer });
-              }
-            }
-          }
-          updateOverlayFiles();
-          onChange('paste');
-        } catch (e) { d('paste err', e); }
-      }, { passive: true });
-
-      // drop
-      document.addEventListener('drop', async (ev) => {
-        try {
-          const files = (ev.dataTransfer && Array.from(ev.dataTransfer.files)) || [];
-          for (const f of files) {
-            const buffer = await fileToArrayBuffer(f);
-            stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
-          }
-          updateOverlayFiles();
-          onChange('drop');
-        } catch (e) { d('drop err', e); }
-      }, { passive: true });
-
-      // manual capture for debugging (returns an object)
-      window.AEGIS_manualCapture = function () {
-        const p = findParagraph();
-        const t = readParagraphText(p);
-        updateOverlayPrompt(t || '(empty)');
-
-        // Quick size check before sending
-        const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || (f.buffer ? f.buffer.byteLength : 0)), 0);
-        if (totalBytes > MAX_TRANSFER_BYTES) {
-          d('Total staged files exceed transfer limit', totalBytes);
-          // send metadata only so background can decide what to do next
-          const minimal = stagedFiles.map(f => ({ name: f.name, type: f.type, size: f.size }));
-          // still call sendToBackground with empty buffers to record capture in logs
-          return sendToBackground(t, stagedFiles.map(f => ({ ...f, buffer: null })), 'manual-capture')
-            .catch(err => ({ error: String(err), note: 'files too large to transfer; consider chunked upload or staging' }));
-        }
-
-        return sendToBackground(t, stagedFiles.slice(), 'manual-capture')
-          .then(r => r)
-          .catch(e => ({ error: String(e) }));
-      };
-    }
 
     async function onChange(source) {
       paragraph = findParagraph();
@@ -245,20 +172,76 @@
       last = txt;
       updateOverlayPrompt(txt);
 
-      // Quick total size check - avoid blasting too-large ArrayBuffers through the message channel
-      const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || (f.buffer ? f.buffer.byteLength : 0)), 0);
+      const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || 0), 0);
       if (totalBytes > MAX_TRANSFER_BYTES) {
-        d('skip sending capture: staged files too large', totalBytes);
-        // still send metadata to background so logs show capture, but don't send buffers
-        const metaOnly = stagedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, buffer: null }));
-        sendToBackground(txt, metaOnly, source).catch(e => d('bg send err', e));
+        const meta = stagedFiles.map(f => ({ name: f.name, type: f.type, size: f.size }));
+        sendToBackground(txt, meta, source).catch(e => d('bg send err', e));
         return;
       }
-
       sendToBackground(txt, stagedFiles.slice(), source).catch(e => d('bg send err', e));
     }
 
-    start();
+    // observe file inputs (normal sites)
+    const obs = new MutationObserver(() => {
+      document.querySelectorAll('input[type=file]').forEach(input => {
+        if (input.__aegis_hooked) return;
+        input.__aegis_hooked = true;
+        input.addEventListener('change', async () => {
+          try {
+            for (const f of Array.from(input.files || [])) {
+              const buffer = await fileToArrayBuffer(f);
+              stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
+            }
+            updateOverlayFiles();
+            onChange('file-input-change');
+          } catch (e) { d('file change err', e); }
+        });
+      });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    // paste handler
+    document.addEventListener('paste', async (ev) => {
+      try {
+        const items = ev.clipboardData && ev.clipboardData.items;
+        if (!items) return;
+        for (const it of items) {
+          if (it.kind === 'file') {
+            const f = it.getAsFile();
+            if (f) {
+              const buffer = await fileToArrayBuffer(f);
+              stagedFiles.push({ name: f.name || 'clipboard', type: f.type, size: f.size, buffer });
+            }
+          }
+        }
+        updateOverlayFiles();
+        onChange('paste');
+      } catch (e) { d('paste err', e); }
+    }, { passive: true });
+
+    // drop handler
+    document.addEventListener('drop', async (ev) => {
+      try {
+        const files = (ev.dataTransfer && Array.from(ev.dataTransfer.files)) || [];
+        for (const f of files) {
+          const buffer = await fileToArrayBuffer(f);
+          stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
+        }
+        updateOverlayFiles();
+        onChange('drop');
+      } catch (e) { d('drop err', e); }
+    }, { passive: true });
+
+    // text observers
+    const root = document.querySelector(ROOT_SELECTOR);
+    if (root) {
+      root.addEventListener('input', () => onChange('input'), { passive: true });
+      paragraph = findParagraph();
+      if (paragraph) {
+        paragraphObserver = new MutationObserver(() => onChange('paragraph'));
+        paragraphObserver.observe(paragraph, { childList: true, subtree: true, characterData: true });
+      }
+    }
   })();
 
   d('AEGIS content script installed');

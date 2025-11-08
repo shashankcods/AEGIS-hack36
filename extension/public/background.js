@@ -1,4 +1,5 @@
 // public/background.js
+<<<<<<< Updated upstream
 // Background service worker for AEGIS extension
 // - Per-tab logs, auto-clear on SESSION_START / SESSION_END
 // - Accepts UPLOAD_CANDIDATE with files: [{name,type,size,buffer}] where buffer is ArrayBuffer or null
@@ -28,9 +29,37 @@ function clearLogsFor(tabId) {
 }
 
 // read token from storage
+=======
+const API_BASE = 'http://127.0.0.1:8000';
+const ANALYZE_PATH = '/api/analyze/';
+const TOKEN_KEY = 'aegis_api_token';
+const MAX_RETRY = 3;
+const MAX_LOGS = 500;
+
+const logs = [];
+function d(...a) { console.log('[Aegis background]', ...a); }
+
+// ---- Keep-alive heartbeat ----
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('[Aegis background] Installed');
+  chrome.alarms.create('aegis_heartbeat', { periodInMinutes: 4 });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  console.log('[Aegis background] Startup');
+  chrome.alarms.create('aegis_heartbeat', { periodInMinutes: 4 });
+});
+
+chrome.alarms.onAlarm.addListener((a) => {
+  if (a.name === 'aegis_heartbeat') d('heartbeat tick');
+});
+
+// ---- Read token helper ----
+>>>>>>> Stashed changes
 function readToken() {
-  return new Promise((res) => {
+  return new Promise(res => {
     try {
+<<<<<<< Updated upstream
       chrome.storage.local.get([TOKEN_KEY], (items) => {
         res(items && items[TOKEN_KEY] ? items[TOKEN_KEY] : null);
       });
@@ -88,11 +117,50 @@ async function uploadToBackend({ text = "", files = [] }) {
 
   const headers = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
+=======
+      chrome.storage.local.get([TOKEN_KEY], items => res(items?.[TOKEN_KEY] || null));
+    } catch (e) { d('readToken error', e); res(null); }
+  });
+}
+
+// ---- Ping responder ----
+chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
+  if (msg?.type === 'PING') {
+    d('Got PING from', sender?.url);
+    sendResp({ ok: true, msg: 'pong from background' });
+    return true;
+  }
+});
+
+// ---- Upload function ----
+async function uploadToBackend({ text, files = [] }) {
+  const token = await readToken();
+  const form = new FormData();
+  if (text) form.append('text', text);
+
+  if (files.length > 0) {
+    const f = files[0];
+    let blob = null;
+    if (f.buffer && Array.isArray(f.buffer)) {
+      const uint8 = new Uint8Array(f.buffer);
+      blob = new Blob([uint8], { type: f.type || 'application/octet-stream' });
+    }
+    if (blob) {
+      d('Attached blob:', f.name, blob.size);
+      form.append('image', blob, f.name || 'upload.bin');
+    } else {
+      d('⚠️ file missing buffer', f.name);
+    }
+  }
+
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+>>>>>>> Stashed changes
   const url = API_BASE + ANALYZE_PATH;
 
-  let lastErr = null;
   for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
     try {
+<<<<<<< Updated upstream
       const res = await fetch(url, { method: "POST", body: form, headers, credentials: "omit" });
       if (!res.ok) {
         const body = await res.text().catch(() => "");
@@ -176,11 +244,52 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
           filesMeta: (payload.files || []).map((f) => ({ name: f.name, size: f.size, type: f.type, hasBuffer: !!f.buffer })),
           ts: Date.now(),
           source: msg.source || "content",
+=======
+      const res = await fetch(url, { method: 'POST', body: form, headers });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json().catch(() => ({}));
+      return json;
+    } catch (err) {
+      d(`upload attempt ${attempt + 1} failed:`, err.message);
+      await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+    }
+  }
+  throw new Error('Upload failed after retries');
+}
+
+// ---- Log manager ----
+const connectedPorts = new Map();
+function pushLog(entry) {
+  logs.unshift(entry);
+  while (logs.length > MAX_LOGS) logs.pop();
+  for (const [id, port] of connectedPorts.entries()) {
+    try { port.postMessage({ type: 'NEW_CAPTURE', entry }); }
+    catch { connectedPorts.delete(id); }
+  }
+}
+
+// ---- Unified message router ----
+chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
+  (async () => {
+    try {
+      if (msg?.type === 'UPLOAD_CANDIDATE') {
+        const payload = msg.payload || {};
+        const entry = {
+          textPreview: (payload.text || '').slice(0, 400),
+          textLen: (payload.text || '').length,
+          filesMeta: (payload.files || []).map(f => ({
+            name: f.name, size: f.size, type: f.type,
+            bufferLen: f.buffer ? f.buffer.length : 0
+          })),
+          ts: Date.now(),
+          source: msg.source || sender?.url || 'content'
+>>>>>>> Stashed changes
         };
 
         // store meta as a capture log
         pushLogForTab(tabId, entryMeta);
 
+<<<<<<< Updated upstream
         try {
           const result = await uploadToBackend({ text: payload.text, files: payload.files || [] });
           d("upload result", result);
@@ -197,6 +306,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
           d("upload error", err && err.message);
           return sendResp({ ok: false, error: err && err.message ? String(err.message) : String(err) });
         }
+=======
+        const result = await uploadToBackend({
+          text: payload.text,
+          files: payload.files || []
+        }).catch(err => ({ error: err.message }));
+
+        sendResp({ ok: !result.error, result });
+      } else if (msg?.type === 'GET_LOGS') {
+        sendResp({ ok: true, logs });
+      } else {
+        sendResp({ ok: false, error: 'Unknown message type' });
+>>>>>>> Stashed changes
       }
 
       // GET_LOGS: return logs for supplied tabId or sender.tab.id
@@ -225,11 +346,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
       // unknown
       return sendResp({ ok: false, error: "unknown message type" });
     } catch (e) {
+<<<<<<< Updated upstream
       d("background handler exception", e);
       try { sendResp({ ok: false, error: String(e) }); } catch (ee) {}
     }
   })();
 
   // indicate we'll respond asynchronously
+=======
+      d('background handler exception', e);
+      sendResp({ ok: false, error: String(e) });
+    }
+  })();
+>>>>>>> Stashed changes
   return true;
 });
+
+d('Background worker active');
