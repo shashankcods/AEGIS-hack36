@@ -1,55 +1,59 @@
-// copy-manifest.js
+// copy-manifest.js — safe full copier for Chrome Extension build
 const fs = require('fs');
 const path = require('path');
 
 const root = process.cwd();
-const srcManifest = path.join(root, 'manifest.json');
-const dist = path.join(root, 'dist');
+const buildTemp = path.join(root, 'build_temp');
+const publicDir = path.join(root, 'public');
+const distDir = path.join(root, 'dist');
 
-function copyFile(srcRelative, destName) {
-  const src = path.join(root, srcRelative);
-  const dest = path.join(dist, destName);
+function ensureDir(p) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
+
+function copy(src, dest) {
+  const stat = fs.lstatSync(src);
+  if (stat.isDirectory()) {
+    fs.cpSync(src, dest, { recursive: true, force: true });
+  } else {
+    ensureDir(path.dirname(dest));
+    fs.copyFileSync(src, dest);
+  }
+}
+
+function safeCopy(src, dest) {
   if (!fs.existsSync(src)) {
-    console.warn('copy-manifest: source missing', src);
+    console.warn(`[copy-manifest] skip: ${src} not found`);
     return;
   }
-  fs.copyFileSync(src, dest);
-  console.log('copied', srcRelative, '->', destName);
+  try {
+    copy(src, dest);
+    console.log(`[copy-manifest] copied: ${src} → ${dest}`);
+  } catch (e) {
+    console.error(`[copy-manifest] failed to copy ${src}:`, e.message);
+  }
 }
 
-// create dist if not present
-if (!fs.existsSync(dist)) {
-  console.error('dist not found. Build failed or run "npm run build" first.');
-  process.exit(1);
-}
+(function main() {
+  ensureDir(distDir);
 
-// 1) copy root manifest to dist/manifest.json
-if (fs.existsSync(srcManifest)) {
-  fs.copyFileSync(srcManifest, path.join(dist, 'manifest.json'));
-  console.log('manifest copied to dist/');
-} else {
-  console.warn('root manifest.json not found.');
-}
+  // 1️⃣ Copy essentials from public/
+  safeCopy(path.join(root, 'manifest.json'), path.join(distDir, 'manifest.json'));
+  safeCopy(path.join(publicDir, 'background.js'), path.join(distDir, 'background.js'));
+  safeCopy(path.join(publicDir, 'content_script.js'), path.join(distDir, 'content_script.js'));
+  safeCopy(path.join(publicDir, 'icons'), path.join(distDir, 'icons'));
 
-// 2) copy public assets into dist root
-const publicDir = path.join(root, 'public');
-if (fs.existsSync(publicDir)) {
-  const items = fs.readdirSync(publicDir);
-  items.forEach(name => {
-    const from = path.join(publicDir, name);
-    const to = path.join(dist, name);
-    if (fs.lstatSync(from).isDirectory()) {
-      // copy directory recursively (icons)
-      const destDir = to;
-      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-      fs.readdirSync(from).forEach(file => {
-        fs.copyFileSync(path.join(from, file), path.join(destDir, file));
-      });
-    } else {
-      fs.copyFileSync(from, to);
-    }
-    console.log('copied', name, 'to dist/');
-  });
-} else {
-  console.warn('public directory not found — ensure public/content_script.js and public/background.js exist');
-}
+  // 2️⃣ Copy popup build from build_temp/
+  const popupHtml = path.join(buildTemp, 'index.html');
+  const popupAssets = path.join(buildTemp, 'assets');
+  if (fs.existsSync(popupHtml)) {
+    safeCopy(popupHtml, path.join(distDir, 'index.html'));
+  } else {
+    console.warn('[copy-manifest] popup HTML missing; run vite build first');
+  }
+  if (fs.existsSync(popupAssets)) {
+    safeCopy(popupAssets, path.join(distDir, 'assets'));
+  }
+
+  console.log('\n✅ [copy-manifest] Build copy complete. Ready to load dist/ in Chrome.');
+})();
