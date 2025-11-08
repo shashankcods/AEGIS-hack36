@@ -20,6 +20,8 @@ env/
 ENV/
 .venv/
 .python-version
+*/venv/
+*/env/
 
 # --- Django Stuff ---
 *.log
@@ -29,13 +31,29 @@ staticfiles/
 static/
 local_settings.py
 
-# --- ML / Pathway / Logs ---
-logs/
-uploads/
-rules/__pycache__/
+# --- ML / Model Artifacts ---
 ml_service/__pycache__/
 ml_service/detectors/__pycache__/
+ml_service/gliner-pii/
+*.bin
+*.pt
+*.pth
+*.model
+*.onnx
+*.h5
+*.pkl
+*.joblib
+*.ckpt
+checkpoints/
+runs/
+artifacts/
+logs/
+uploads/
+
+# --- Pathway Engine ---
 pathway_engine/__pycache__/
+pathway_engine/cache/
+pathway_engine/logs/
 
 # --- IDEs & Editors ---
 .vscode/
@@ -59,10 +77,9 @@ Desktop.ini
 *.tmp
 *.cache
 *.orig
-*.log
 __MACOSX/
 
-# --- Coverage / Testing ---
+# --- Testing / Coverage ---
 .coverage
 htmlcov/
 .tox/
@@ -72,19 +89,7 @@ coverage.xml
 *.py,cover
 .pytest_cache/
 
-# --- ML Artifacts ---
-checkpoints/
-runs/
-artifacts/
-*.model
-*.pth
-*.pt
-*.onnx
-*.h5
-*.pkl
-*.joblib
-
-# --- Node/Extension Frontend ---
+# --- Node / Extension Frontend ---
 extension/node_modules/
 extension/dist/
 extension/.env
