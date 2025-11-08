@@ -38,7 +38,8 @@ gliner_model = load_gliner_model()
 
 # PII labels to detect
 LABELS = [
-    "name", "date_of_birth", "age", "email", "phone_number",
+    "name",
+    "date_of_birth", "age", "email", "phone_number",
     "address", "city", "state", "zip_code", "ip_address", "url",
     "account_number", "credit_card_number", "bank_name", "pan_number", "ssn",
     "passport_number", "driver_license_number", "aadhar_number", "national_id_number",

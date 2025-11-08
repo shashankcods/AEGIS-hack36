@@ -1,35 +1,4 @@
 // public/background.js
-<<<<<<< Updated upstream
-// Background service worker for AEGIS extension
-// - Per-tab logs, auto-clear on SESSION_START / SESSION_END
-// - Accepts UPLOAD_CANDIDATE with files: [{name,type,size,buffer}] where buffer is ArrayBuffer or null
-// - Sends FormData to backend and broadcasts parsed JSON results
-// - Safe sendMessage usage to avoid "Receiving end does not exist" errors
-
-const API_BASE = "http://127.0.0.1:8000";
-const ANALYZE_PATH = "/api/analyze/";
-const TOKEN_KEY = "aegis_api_token";
-
-const MAX_ACCEPT_BYTES = 12 * 1024 * 1024; // 12 MB background limit
-const MAX_RETRY = 3;
-const MAX_LOGS_PER_TAB = 500;
-
-function d(...a) { console.log("[Aegis background]", ...a); }
-
-// per-tab in-memory logs
-const logsByTab = new Map(); // tabId -> Array<entry>
-
-function ensureLogsFor(tabId) {
-  if (!logsByTab.has(tabId)) logsByTab.set(tabId, []);
-  return logsByTab.get(tabId);
-}
-function clearLogsFor(tabId) {
-  logsByTab.set(tabId, []);
-  d("cleared logs for tab", tabId);
-}
-
-// read token from storage
-=======
 const API_BASE = 'http://127.0.0.1:8000';
 const ANALYZE_PATH = '/api/analyze/';
 const TOKEN_KEY = 'aegis_api_token';
@@ -55,69 +24,9 @@ chrome.alarms.onAlarm.addListener((a) => {
 });
 
 // ---- Read token helper ----
->>>>>>> Stashed changes
 function readToken() {
   return new Promise(res => {
     try {
-<<<<<<< Updated upstream
-      chrome.storage.local.get([TOKEN_KEY], (items) => {
-        res(items && items[TOKEN_KEY] ? items[TOKEN_KEY] : null);
-      });
-    } catch (e) {
-      d("readToken error", e);
-      res(null);
-    }
-  });
-}
-
-// convert incoming file descriptor {name,type,size,buffer} to Blob if buffer present
-function fileDescToBlob(f) {
-  if (!f) return null;
-  if (!f.buffer) return null;
-  try {
-    // buffer is expected to be an ArrayBuffer (structured-clone from content script)
-    return new Blob([f.buffer], { type: f.type || "application/octet-stream" });
-  } catch (e) {
-    d("fileDescToBlob error", e);
-    return null;
-  }
-}
-
-// upload to backend using FormData
-async function uploadToBackend({ text = "", files = [] }) {
-  const token = await readToken();
-  const form = new FormData();
-  form.append("text", text || "");
-
-  // compute total bytes
-  let totalBytes = 0;
-  for (const f of files) {
-    totalBytes += f.size || (f.buffer ? (f.buffer.byteLength || 0) : 0);
-  }
-  if (totalBytes > MAX_ACCEPT_BYTES) {
-    throw new Error(`Total files size ${totalBytes} > background limit ${MAX_ACCEPT_BYTES}`);
-  }
-
-  // append files; for entries without buffer append metadata instead
-  for (let i = 0; i < files.length; i++) {
-    const f = files[i];
-    if (!f || !f.buffer) {
-      // append meta so server still sees something if needed
-      form.append("file_meta", JSON.stringify({ name: f && f.name, size: f && f.size, type: f && f.type }));
-      continue;
-    }
-    const blob = fileDescToBlob(f);
-    if (!blob) {
-      form.append("file_meta", JSON.stringify({ name: f.name, size: f.size, type: f.type }));
-      continue;
-    }
-    // field name 'files' -> Django request.FILES.getlist('files')
-    form.append("files", blob, f.name || `file-${i}`);
-  }
-
-  const headers = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-=======
       chrome.storage.local.get([TOKEN_KEY], items => res(items?.[TOKEN_KEY] || null));
     } catch (e) { d('readToken error', e); res(null); }
   });
@@ -155,12 +64,10 @@ async function uploadToBackend({ text, files = [] }) {
 
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
->>>>>>> Stashed changes
   const url = API_BASE + ANALYZE_PATH;
 
   for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
     try {
-<<<<<<< Updated upstream
       const res = await fetch(url, { method: "POST", body: form, headers, credentials: "omit" });
       if (!res.ok) {
         const body = await res.text().catch(() => "");
@@ -244,52 +151,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
           filesMeta: (payload.files || []).map((f) => ({ name: f.name, size: f.size, type: f.type, hasBuffer: !!f.buffer })),
           ts: Date.now(),
           source: msg.source || "content",
-=======
-      const res = await fetch(url, { method: 'POST', body: form, headers });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json().catch(() => ({}));
-      return json;
-    } catch (err) {
-      d(`upload attempt ${attempt + 1} failed:`, err.message);
-      await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
-    }
-  }
-  throw new Error('Upload failed after retries');
-}
-
-// ---- Log manager ----
-const connectedPorts = new Map();
-function pushLog(entry) {
-  logs.unshift(entry);
-  while (logs.length > MAX_LOGS) logs.pop();
-  for (const [id, port] of connectedPorts.entries()) {
-    try { port.postMessage({ type: 'NEW_CAPTURE', entry }); }
-    catch { connectedPorts.delete(id); }
-  }
-}
-
-// ---- Unified message router ----
-chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
-  (async () => {
-    try {
-      if (msg?.type === 'UPLOAD_CANDIDATE') {
-        const payload = msg.payload || {};
-        const entry = {
-          textPreview: (payload.text || '').slice(0, 400),
-          textLen: (payload.text || '').length,
-          filesMeta: (payload.files || []).map(f => ({
-            name: f.name, size: f.size, type: f.type,
-            bufferLen: f.buffer ? f.buffer.length : 0
-          })),
-          ts: Date.now(),
-          source: msg.source || sender?.url || 'content'
->>>>>>> Stashed changes
         };
 
         // store meta as a capture log
         pushLogForTab(tabId, entryMeta);
 
-<<<<<<< Updated upstream
         try {
           const result = await uploadToBackend({ text: payload.text, files: payload.files || [] });
           d("upload result", result);
@@ -306,18 +172,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
           d("upload error", err && err.message);
           return sendResp({ ok: false, error: err && err.message ? String(err.message) : String(err) });
         }
-=======
-        const result = await uploadToBackend({
-          text: payload.text,
-          files: payload.files || []
-        }).catch(err => ({ error: err.message }));
-
-        sendResp({ ok: !result.error, result });
-      } else if (msg?.type === 'GET_LOGS') {
-        sendResp({ ok: true, logs });
-      } else {
-        sendResp({ ok: false, error: 'Unknown message type' });
->>>>>>> Stashed changes
       }
 
       // GET_LOGS: return logs for supplied tabId or sender.tab.id
@@ -346,19 +200,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
       // unknown
       return sendResp({ ok: false, error: "unknown message type" });
     } catch (e) {
-<<<<<<< Updated upstream
       d("background handler exception", e);
       try { sendResp({ ok: false, error: String(e) }); } catch (ee) {}
     }
   })();
 
   // indicate we'll respond asynchronously
-=======
-      d('background handler exception', e);
-      sendResp({ ok: false, error: String(e) });
-    }
-  })();
->>>>>>> Stashed changes
   return true;
 });
 

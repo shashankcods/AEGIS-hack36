@@ -1,13 +1,19 @@
+// vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { crx } from '@crxjs/vite-plugin';
+import manifest from './manifest.config';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    crx({ manifest })
+  ],
+  base: './',
   build: {
-    // keep files flat so popup ends up as dist/index.html
-    outDir: 'dist',
-    rollupOptions: {
-      // default is fine — popup will be dist/index.html, assets in dist/assets
-    }
+    outDir: 'dist'
+  },
+  server: {
+    port: 5173
   }
 });
