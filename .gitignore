@@ -13,6 +13,7 @@ __pycache__/
 build/
 dist/
 pip-wheel-metadata/
+*.spec
 
 # --- Virtual Environment ---
 venv/
@@ -30,25 +31,42 @@ media/
 staticfiles/
 static/
 local_settings.py
+*.db
 
-# --- ML / Model Artifacts ---
-ml_service/__pycache__/
-ml_service/detectors/__pycache__/
-ml_service/gliner-pii/
+# --- ML / Model Artifacts (Never Push to GitHub) ---
+# Local model directories
+ml_service/**/gliner-pii/
+ml_service/**/mental-health-model/
+ml_service/**/models/
+ml_service/**/checkpoints/
+ml_service/**/artifacts/
+
+# Weight / checkpoint file formats
 *.bin
+*.safetensors
 *.pt
 *.pth
-*.model
-*.onnx
 *.h5
+*.ckpt
+*.onnx
+*.model
 *.pkl
 *.joblib
-*.ckpt
-checkpoints/
+*.tflite
+*.pb
+*.tar.gz
+*.zip
+*.bz2
+*.tar
+*.rar
+
+# ML runtime outputs
 runs/
 artifacts/
 logs/
 uploads/
+cache/
+checkpoints/
 
 # --- Pathway Engine ---
 pathway_engine/__pycache__/
@@ -71,7 +89,7 @@ Desktop.ini
 .env
 *.env
 
-# --- Temporary or Cache Files ---
+# --- Temporary / Cache Files ---
 *.bak
 *.swp
 *.tmp
@@ -88,6 +106,7 @@ coverage.xml
 *.cover
 *.py,cover
 .pytest_cache/
+pytestdebug.log
 
 # --- Node / Extension Frontend ---
 extension/node_modules/
@@ -97,6 +116,8 @@ extension/.next/
 extension/package-lock.json
 extension/yarn.lock
 
-# --- Misc ---
+# --- Miscellaneous ---
 tmp/
 output/
+*.ipynb_checkpoints/
+*.log.*
