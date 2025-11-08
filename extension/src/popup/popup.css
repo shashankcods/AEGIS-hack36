@@ -1,0 +1,96 @@
+/* src/popup/popup.css
+   Minimal styles so UI looks consistent even if Tailwind isn't present.
+   Colors: dark navy / slate + neon accents to match your popup design.
+*/
+
+:root{
+  --bg-1: #071026;
+  --bg-2: #0b1220;
+  --card: #0f1724;
+  --muted: #9CA3AF;
+  --text: #E6EEF8;
+  --accent: #7C3AED;
+  --accent-2: #7DD3FC;
+  --green: #34D399;
+  --amber: #F59E0B;
+  --red: #EF4444;
+}
+
+.popup-root{
+  width: 420px;
+  padding: 14px;
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.7);
+  box-sizing: border-box;
+}
+
+/* header */
+.popup-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+}
+.title{ font-size:16px; font-weight:700; margin:0; }
+.subtitle{ font-size:11px; color:var(--muted); margin-top:4px; }
+
+.header-actions .btn{ margin-left:6px; }
+
+/* main row */
+.main-row{ display:flex; gap:12px; }
+.gauge-col{ width:140px; display:flex; flex-direction:column; align-items:center; }
+.leak-count{ margin-top:8px; font-size:13px; color:var(--muted); }
+.leak-num{ font-weight:700; color:var(--accent-2); }
+
+/* controls */
+.controls-col{ flex:1; }
+.controls{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.last-scan{ margin-left:auto; font-size:11px; color:var(--muted); }
+
+.input-area{
+  width:100%;
+  background: #071427;
+  border: 1px solid rgba(255,255,255,0.02);
+  padding:8px;
+  border-radius:8px;
+  color:var(--text);
+  font-size:13px;
+  margin-bottom:8px;
+}
+
+/* analyze row */
+.analyze-row{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+
+/* log */
+.log-section{ margin-top:12px; background: rgba(255,255,255,0.02); padding:8px; border-radius:8px; max-height:200px; overflow:auto; }
+.log-header{ font-size:13px; color:var(--muted); margin-bottom:6px; }
+.log-row{ display:flex; justify-content:space-between; gap:8px; padding:8px 6px; border-bottom:1px dashed rgba(255,255,255,0.02); }
+.log-left{ flex:1; }
+.log-type{ font-size:13px; font-weight:600; color:var(--text); }
+.log-count{ font-size:12px; color:var(--muted); margin-left:6px; }
+.log-ts{ font-size:11px; color:var(--muted); margin-top:4px; }
+.log-ex{ font-size:11px; color:#9AB0C8; margin-top:6px; }
+.log-empty{ color:var(--muted); font-size:13px; padding:8px; }
+
+/* buttons */
+.btn{
+  padding:6px 10px;
+  border-radius:8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.03);
+  color: var(--text);
+  cursor:pointer;
+  font-size:13px;
+}
+.btn.primary{ background: linear-gradient(90deg, var(--accent), #4F46E5); border:none; }
+.btn.success{ background: linear-gradient(90deg, #10B981, #059669); border:none; }
+.btn.ghost{ background: transparent; border: 1px solid rgba(255,255,255,0.03); color:var(--muted); }
+.btn.danger{ background: linear-gradient(90deg,#EF4444,#F97316); border:none; }
+.btn.tiny{ padding:5px 8px; font-size:12px; border-radius:6px; }
+
+/* footer */
+.footer-note{ margin-top:10px; font-size:11px; color:var(--muted); text-align:center; }

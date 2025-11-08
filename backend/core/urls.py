@@ -10,9 +10,5 @@ def home(request):
 urlpatterns = [
     path("", home, name="home"),         
     path("admin/", admin.site.urls),
-<<<<<<< HEAD
     path('api/', include('ML_api.urls')),
-=======
-    path("api/", include("ML_api.urls")),
->>>>>>> feature/9-frontend-ml-endpoint
 ]
