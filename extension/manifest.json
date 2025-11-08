@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Aegis Minimal Logger",
-  "version": "0.2.0",
-  "description": "Minimal capture-only build: extract text from LLM chat UI and show logs in popup (debug build).",
+  "version": "0.2.2",
+  "description": "Minimal capture-only build: extract text and images before LLM submission.",
   "icons": {
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
@@ -10,24 +10,35 @@
   "permissions": [
     "storage",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": [
+    "http://127.0.0.1:8000/*",
+    "https://chat.openai.com/*",
     "<all_urls>"
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "index.html",
     "default_title": "Aegis - Logs"
   },
-  "background": {
-    "service_worker": "background.js"
-  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://chat.openai.com/*"],
       "js": ["content_script.js"],
       "run_at": "document_idle",
       "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["intercept_inject.js"],
+      "matches": ["https://chat.openai.com/*"]
     }
   ]
 }
