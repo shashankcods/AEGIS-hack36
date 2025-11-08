@@ -3,7 +3,7 @@
 # ==============================================
 
 # --- Python & Django ---
-__pycache__/
+_pycache_/
 *.py[cod]
 *.pyo
 *.pyd
@@ -69,7 +69,7 @@ cache/
 checkpoints/
 
 # --- Pathway Engine ---
-pathway_engine/__pycache__/
+pathway_engine/_pycache_/
 pathway_engine/cache/
 pathway_engine/logs/
 
@@ -120,4 +120,7 @@ extension/yarn.lock
 tmp/
 output/
 *.ipynb_checkpoints/
-*.log.*
+.log.
+
+.venv
+.venv-ubuntu
