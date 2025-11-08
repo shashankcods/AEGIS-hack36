@@ -9,11 +9,32 @@ import os
 import re
 import magic
 import tempfile, os, time
+import torch
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Loading PII model
 print("Loading GLiNER PII model...")
-gliner_model = GLiNER.from_pretrained("nvidia/gliner-pii")
+LOCAL_GLINER_PATH = os.path.join(os.path.dirname(__file__), "gliner-pii")
+
+def load_gliner_model():
+    try:
+        # Check if local model exists and has weights
+        weight_path = os.path.join(LOCAL_GLINER_PATH, "pytorch_model.bin")
+        if os.path.exists(weight_path):
+            print(f"✅ Found local GLiNER model at: {LOCAL_GLINER_PATH}")
+            model = GLiNER.from_pretrained(LOCAL_GLINER_PATH, local_files_only=True).to(device)
+            print("✅ Local GLiNER model loaded successfully.")
+            return model
+        else:
+            raise FileNotFoundError("Local GLiNER model files missing.")
+    except Exception as e:
+        print(f"⚠️ Local load failed ({e}). Falling back to cloud...")
+        model = GLiNER.from_pretrained("nvidia/gliner-pii").to(device)
+        print("☁️ Cloud GLiNER model loaded successfully.")
+        return model
+
+gliner_model = load_gliner_model()
 
 # PII labels to detect
 LABELS = [
@@ -29,12 +50,37 @@ LABELS = [
 
 # Loading Mental-health classifier
 print("Loading Mental-health classifier...")
-mental_health_model = pipeline(
-    "text-classification",
-    model="Akashpaul123/bert-suicide-detection",
-    tokenizer="Akashpaul123/bert-suicide-detection",
-    top_k=None
-)
+LOCAL_MENTAL_PATH = os.path.join(os.path.dirname(__file__), "mental-health-model")
+
+def load_mental_health_model():
+    try:
+        config_path = os.path.join(LOCAL_MENTAL_PATH, "config.json")
+        weights_path = os.path.join(LOCAL_MENTAL_PATH, "model.safetensors")
+
+        if os.path.exists(config_path) and os.path.exists(weights_path):
+            print(f"✅ Found local Mental-health model at: {LOCAL_MENTAL_PATH}")
+            model = pipeline(
+                "text-classification",
+                model=LOCAL_MENTAL_PATH,
+                tokenizer=LOCAL_MENTAL_PATH,
+                top_k=None
+            )
+            print("✅ Local Mental-health classifier loaded successfully.")
+            return model
+        else:
+            raise FileNotFoundError("Mental model files missing locally.")
+    except Exception as e:
+        print(f"⚠️ Local model not found or failed ({e}). Falling back to cloud...")
+        model = pipeline(
+            "text-classification",
+            model="Akashpaul123/bert-suicide-detection",
+            tokenizer="Akashpaul123/bert-suicide-detection",
+            top_k=None
+        )
+        print("☁️ Cloud Mental-health classifier loaded successfully.")
+        return model
+
+mental_health_model = load_mental_health_model()
 
 # Mental-health labeling
 MENTAL_LABEL_MAP = {
