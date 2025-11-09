@@ -187,3 +187,59 @@ body {
   color: #333;
   font-weight: 600;
 }
+
+/* Scrollable container section */
+.scroll-container {
+  max-height: 120px;
+  overflow-y: auto;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.scroll-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.scroll-card:last-child {
+  border-bottom: none;
+}
+
+.scroll-label {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+}
+
+.scroll-bar {
+  flex: 2;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scroll-bar-fill {
+  height: 100%;
+  background: #9ca3af;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.scroll-value {
+  flex: 0;
+  width: 40px;
+  text-align: right;
+  font-size: 12px;
+  color: #555;
+  font-weight: 600;
+}

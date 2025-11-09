@@ -14,6 +14,15 @@ export default function Popup() {
     highCount: 5,
   });
 
+  const [labels] = useState([
+    { label: "PII Entities", value: 82 },
+    { label: "Sensitive Keywords", value: 67 },
+    { label: "Confidential Docs", value: 44 },
+    { label: "Financial Mentions", value: 76 },
+    { label: "Medical Info", value: 58 },
+    { label: "Names Detected", value: 89 },
+  ]);
+
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 100);
@@ -26,6 +35,25 @@ export default function Popup() {
         <header className="popup-header centered">
           <h3>AEGIS</h3>
         </header>
+
+        {/* === Scrollable container === */}
+        <div className="scroll-container">
+          {labels.map((item, i) => (
+            <div key={i} className="scroll-card">
+              <div className="scroll-label">{item.label}</div>
+              <div className="scroll-bar">
+                <div
+                  className="scroll-bar-fill"
+                  style={{
+                    width: loaded ? `${item.value}%` : 0,
+                  }}
+                ></div>
+              </div>
+              <span className="scroll-value">{item.value}%</span>
+            </div>
+          ))}
+        </div>
+        {/* === End scrollable container === */}
 
         <div className="card-grid">
           <div className="metric-card large">
