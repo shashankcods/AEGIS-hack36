@@ -1,128 +1,137 @@
-// extension/src/popup/Popup.tsx
-import { useEffect, useState } from 'react';
-
-type LogEntry = {
-  ts: number;
-  type: string;
-  ok?: boolean;
-  result?: any;
-  error?: string;
-  text?: string;
-  filename?: string | null;
-};
-
-function formatTs(ts: number) {
-  const d = new Date(ts);
-  return d.toLocaleString();
-}
+import { useState, useEffect } from "react";
+import "./popup.css";
 
 export default function Popup() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [lastMsg, setLastMsg] = useState<string>('');
+  const [data] = useState({
+    averageSensitivity: 68,
+    highestSensitivity: 92,
+    lowestSensitivity: 40,
+    totalFlagged: 27,
+    uniqueLabels: 12,
+    highSensitivityPct: 32,
+    lowCount: 10,
+    mediumCount: 12,
+    highCount: 5,
+  });
 
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    fetchLogs();
-    const listener = (msg: any) => {
-      if (msg && msg.type === 'UPLOAD_RESULT') {
-        setLogs(prev => [{ ts: Date.now(), type: 'UPLOAD_RESULT', ok: !!msg.result, result: msg.result, error: msg.error }, ...prev].slice(0, 50));
-      }
-    };
-    chrome.runtime.onMessage.addListener(listener);
-    return () => {
-      chrome.runtime.onMessage.removeListener(listener);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = setTimeout(() => setLoaded(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  async function fetchLogs() {
-    setLoading(true);
-    try {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const tab = tabs[0];
-        const tabId = tab?.id ?? 'global';
-        chrome.runtime.sendMessage({ type: 'GET_LOGS', tabId }, (resp) => {
-          if (chrome.runtime.lastError) {
-            setLastMsg(String(chrome.runtime.lastError.message));
-            setLoading(false);
-            return;
-          }
-          if (resp?.ok) {
-            // Show newest first
-            setLogs((resp.logs || []).slice().reverse());
-          } else {
-            setLastMsg('no logs');
-          }
-          setLoading(false);
-        });
-      });
-    } catch (e) {
-      console.error(e);
-      setLoading(false);
-    }
-  }
-
-  function manualCapture() {
-    setLastMsg('');
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs[0];
-      if (!tab || !tab.id) {
-        setLastMsg('no active tab');
-        return;
-      }
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          // @ts-ignore
-          if ((window as any).AEGIS_manualCapture) {
-            // @ts-ignore
-            return (window as any).AEGIS_manualCapture();
-          } else {
-            return { ok: false, error: 'no-capture-fn' };
-          }
-        }
-      }, () => {
-        if (chrome.runtime.lastError) {
-          setLastMsg('capture failed: ' + chrome.runtime.lastError.message);
-        } else {
-          setLastMsg('capture requested');
-          fetchLogs();
-        }
-      });
-    });
-  }
-
   return (
-    <div className="popup-root">
-      <header className="popup-header">
-        <h3>AEGIS</h3>
-        <button onClick={manualCapture} className="primary">Capture</button>
-      </header>
+    <div className="popup-shell">
+      <div className="popup-root">
+        <header className="popup-header centered">
+          <h3>AEGIS</h3>
+        </header>
 
-      <section className="popup-body">
-        <div className="controls">
-          <button onClick={fetchLogs}>Refresh</button>
-          <span className="status">{loading ? 'loading...' : lastMsg}</span>
-        </div>
+        <div className="card-grid">
+          <div className="metric-card large">
+            <h4>Average Sensitivity</h4>
+            <div className="bar-container">
+              <div
+                className="bar-fill"
+                style={{ width: loaded ? `${data.averageSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.averageSensitivity}%</span>
+          </div>
 
-        <ul className="log-list">
-          {logs.length === 0 && <li className="empty">No logs yet</li>}
-          {logs.map((l, idx) => (
-            <li key={idx} className="log-entry">
-              <div className="log-meta">
-                <strong>{l.type}</strong> <span className="ts">{formatTs(l.ts)}</span>
+          <div className="metric-card">
+            <h4>Highest Sensitivity</h4>
+            <div className="bar-container small">
+              <div
+                className="bar-fill high"
+                style={{ width: loaded ? `${data.highestSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.highestSensitivity}%</span>
+          </div>
+
+          <div className="metric-card">
+            <h4>Lowest Sensitivity</h4>
+            <div className="bar-container small">
+              <div
+                className="bar-fill low"
+                style={{ width: loaded ? `${data.lowestSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.lowestSensitivity}%</span>
+          </div>
+
+          <div className="metric-card">
+            <h4>Total Flagged Inputs</h4>
+            <div className="circle-wrapper">
+              <div className="circle-indicator">
+                <span>{data.totalFlagged}</span>
               </div>
-              {l.text && <div className="log-text">{l.text}</div>}
-              {l.result && <pre className="log-result">{JSON.stringify(l.result, null, 2)}</pre>}
-              {l.error && <div className="log-error">{l.error}</div>}
-            </li>
-          ))}
-        </ul>
-      </section>
+            </div>
+          </div>
 
-      <footer className="popup-footer">
-        <small>AEGIS • local dev</small>
-      </footer>
+          <div className="metric-card">
+            <h4>Unique Labels</h4>
+            <div className="circle-wrapper">
+              <div className="circle-indicator alt">
+                <span>{data.uniqueLabels}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card large emphasis">
+            <h4>High Sensitivity %</h4>
+            <div className="bar-container large">
+              <div
+                className="bar-fill medium"
+                style={{ width: loaded ? `${data.highSensitivityPct}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.highSensitivityPct}%</span>
+          </div>
+
+          <div className="three-card-row">
+            <div className="score-box low">
+              <h5>Low</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical low"
+                  style={{
+                    height: loaded ? `${data.lowCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.lowCount}</span>
+            </div>
+
+            <div className="score-box medium">
+              <h5>Medium</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical medium"
+                  style={{
+                    height: loaded ? `${data.mediumCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.mediumCount}</span>
+            </div>
+
+            <div className="score-box high">
+              <h5>High</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical high"
+                  style={{
+                    height: loaded ? `${data.highCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.highCount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

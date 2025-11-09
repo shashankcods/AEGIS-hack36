@@ -1,76 +1,189 @@
-/* src/popup/popup.css */
-.popup-root {
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #f9fafb;
   width: 320px;
-  padding: 10px;
-  color: #e6eef8;
-  background: #0f1724;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: #333;
 }
 
-.popup-header {
+/* Popup container */
+.popup-root {
+  background: #ffffff;
+  padding: 16px;
+  min-height: 100%;
+  text-align: center;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.popup-header.centered {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
 .popup-header h3 {
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: #111;
   margin: 0;
-  font-size: 16px;
+  font-weight: 600;
 }
 
-.primary {
-  background: #2563eb;
-  border: none;
-  color: white;
-  padding: 6px 10px;
+/* Grid Layout */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: #f3f4f6;
   border-radius: 8px;
-  cursor: pointer;
-}
-
-.popup-body .controls {
-  display:flex;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  text-align: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  min-height: 90px;
 }
 
-.log-list {
-  list-style: none;
-  padding: 0;
+.metric-card.large {
+  grid-column: span 2;
+  padding: 14px;
+}
+
+.metric-card.emphasis {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.metric-card h4 {
   margin: 0;
-  max-height: 320px;
-  overflow: auto;
-}
-
-.log-entry {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  padding: 8px 0;
-}
-
-.log-meta {
-  display:flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #9aa8bd;
-}
-
-.log-text {
-  margin-top: 6px;
   font-size: 13px;
-  color: #dbeafe;
+  color: #555;
+  font-weight: 500;
 }
 
-.log-result {
-  margin-top: 6px;
+.metric-value {
   font-size: 12px;
-  background: rgba(255,255,255,0.02);
-  padding: 6px;
-  border-radius: 6px;
-  color: #cfe8ff;
-  white-space: pre-wrap;
+  color: #777;
+  align-self: flex-end;
+  width: 100%;
+  text-align: right;
 }
 
-.log-error { color: #ffb4b4; }
-.empty { color: #9aa8bd; padding: 8px 0; }
+/* Circles (neutral tones) */
+.circle-wrapper {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circle-indicator {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  background: #ffffff;
+}
+
+.circle-indicator.alt {
+  border-color: #6b7280;
+}
+
+/* Bars */
+.bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-container.large {
+  height: 10px;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 0;
+  background: #9ca3af;
+  transition: width 0.6s ease;
+}
+
+.bar-fill.high {
+  background: #6b7280;
+}
+
+.bar-fill.medium {
+  background: #a1a1aa;
+}
+
+.bar-fill.low {
+  background: #d1d5db;
+}
+
+/* Three-card Row (Low, Medium, High) */
+.three-card-row {
+  grid-column: span 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.score-box {
+  flex: 1;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.score-box h5 {
+  margin: 0;
+  font-size: 12px;
+  color: #555;
+}
+
+.score-visual {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 36px;
+}
+
+.bar-vertical {
+  width: 8px;
+  border-radius: 4px;
+  transition: height 0.6s ease;
+  background: #9ca3af;
+}
+
+.score-box span {
+  font-size: 12px;
+  color: #333;
+  font-weight: 600;
+}
