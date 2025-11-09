@@ -8,14 +8,89 @@ import io
 import os
 import re
 import magic
-import tempfile, os, time
+import tempfile
+import time
+
+# ------------------------------
+# Helper: Text Chunking
+# ------------------------------
+def chunk_text(text, tokenizer, max_tokens=512, overlap=50):
+    if not isinstance(text, str):
+        text = str(text or "")
+    text = text.strip()
+    if not text:
+        return []
+
+    try:
+        tokens = tokenizer.encode(text, add_special_tokens=False)
+    except Exception as e:
+        print(f"[Tokenizer error] {e}")
+        tokens = []
+
+    if not tokens:
+        return [text]
+
+    chunks = []
+    start = 0
+    while start < len(tokens):
+        end = min(start + max_tokens - 2, len(tokens))
+        chunk = tokens[start:end]
+        if not chunk:
+            break
+        try:
+            chunk_text = tokenizer.decode(chunk, skip_special_tokens=True).strip()
+        except Exception as e:
+            print(f"[Decode error] {e}")
+            chunk_text = ""
+        if chunk_text:
+            chunks.append(chunk_text)
+        start += max_tokens - overlap
+
+    return chunks
 
 
-# Loading PII model
+def analyze_long_text(text, detector, tokenizer, threshold=0.5):
+    chunks = chunk_text(text, tokenizer)
+    if not chunks:
+        return []
+
+    results = []
+    for i, chunk in enumerate(chunks):
+        try:
+            preds = detector(chunk)
+            if isinstance(preds[0], list):
+                preds = preds[0]
+            for p in preds:
+                if p["score"] >= threshold:
+                    results.append(p)
+        except Exception as e:
+            print(f"[Chunk {i} skipped: {e}]")
+            continue
+
+    aggregated = {}
+    for r in results:
+        label = r["label"]
+        aggregated[label] = aggregated.get(label, 0) + r["score"]
+
+    for label in aggregated:
+        aggregated[label] /= max(len(chunks), 1)
+
+    return [{"label": label, "score": round(score, 3)} for label, score in aggregated.items()]
+
+
+# ------------------------------
+# Load Models with Error Handling
+# ------------------------------
+
+# PII model
 print("Loading GLiNER PII model...")
-gliner_model = GLiNER.from_pretrained("nvidia/gliner-pii")
+try:
+    gliner_model = GLiNER.from_pretrained("nvidia/gliner-pii")
+    print("GLiNER PII model loaded successfully.")
+except Exception as e:
+    print(f"Failed to load GLiNER PII model: {e}")
+    gliner_model = None
 
-# PII labels to detect
 LABELS = [
     "name", "date_of_birth", "age", "email", "phone_number",
     "address", "city", "state", "zip_code", "ip_address", "url",
@@ -27,50 +102,62 @@ LABELS = [
 ]
 
 
-# Loading Mental-health classifier
-print("Loading Mental-health classifier...")
-mental_health_model = pipeline(
-    "text-classification",
-    model="Akashpaul123/bert-suicide-detection",
-    tokenizer="Akashpaul123/bert-suicide-detection",
-    top_k=None
-)
-
-# Mental-health labeling
-MENTAL_LABEL_MAP = {
-    "LABEL_0": "non_suicidal",
-    "LABEL_1": "emotional_distress",
-    "label_0": "non_suicidal",
-    "label_1": "emotional_distress"
-}
-
-
-# Loading Disease-detection model
-print("Loading Disease Detection model...")
+# Self-Harm Model
+print("Loading Self-Harm Detection model...")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SELFHARM_MODEL_PATH = os.path.join(BASE_DIR, "models", "selfharm_model")
+
+try:
+    tokenizer_selfharm = RobertaTokenizerFast.from_pretrained(
+        SELFHARM_MODEL_PATH,
+        vocab_file=os.path.join(SELFHARM_MODEL_PATH, "vocab.json"),
+        merges_file=os.path.join(SELFHARM_MODEL_PATH, "merges.txt")
+    )
+    model_selfharm = RobertaForSequenceClassification.from_pretrained(SELFHARM_MODEL_PATH)
+    selfharm_detector = pipeline(
+        "text-classification",
+        model=model_selfharm,
+        tokenizer=tokenizer_selfharm
+    )
+    print("Self-Harm model loaded successfully.")
+except Exception as e:
+    print(f"Failed to load Self-Harm model: {e}")
+    selfharm_detector = None
+    tokenizer_selfharm = None
+
+
+# Disease Model
+print("Loading Disease Detection model...")
 DISEASE_MODEL_PATH = os.path.join(BASE_DIR, "models", "diseases_model")
 
-# --- FIX: manually load tokenizer to avoid JSON corruption issue ---
-tokenizer = RobertaTokenizerFast.from_pretrained(
-    DISEASE_MODEL_PATH,
-    vocab_file=os.path.join(DISEASE_MODEL_PATH, "vocab.json"),
-    merges_file=os.path.join(DISEASE_MODEL_PATH, "merges.txt")
-)
-model = RobertaForSequenceClassification.from_pretrained(DISEASE_MODEL_PATH)
+try:
+    tokenizer = RobertaTokenizerFast.from_pretrained(
+        DISEASE_MODEL_PATH,
+        vocab_file=os.path.join(DISEASE_MODEL_PATH, "vocab.json"),
+        merges_file=os.path.join(DISEASE_MODEL_PATH, "merges.txt")
+    )
+    model = RobertaForSequenceClassification.from_pretrained(DISEASE_MODEL_PATH)
+    disease_detector = pipeline("text-classification", model=model, tokenizer=tokenizer)
+    print("Disease Detection model loaded successfully.")
+except Exception as e:
+    print(f"Failed to load Disease model: {e}")
+    disease_detector = None
+    tokenizer = None
 
-disease_detector = pipeline(
-    "text-classification",
-    model=model,
-    tokenizer=tokenizer
-)
 
-
-# Initializing PaddleOCR for image-text
+# OCR Init
 print("Initializing PaddleOCR...")
-ocr = PaddleOCR(use_textline_orientation=True, lang='en')
+try:
+    ocr = PaddleOCR(use_textline_orientation=True, lang='en')
+    print("PaddleOCR initialized successfully.")
+except Exception as e:
+    print(f"PaddleOCR initialization failed: {e}")
+    ocr = None
 
 
-# Helper Functions for processing of images
+# ------------------------------
+# Helper Functions
+# ------------------------------
 def preprocess_image(image: Image.Image) -> Image.Image:
     img = image.convert("RGB")
     img = ImageEnhance.Contrast(img).enhance(1.3)
@@ -84,121 +171,98 @@ def clean_ocr_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+
 def extract_text_from_image(image: Image.Image) -> str:
-    result = ocr.ocr(np.array(image))
-    texts = []
-    if isinstance(result, list):
-        for entry in result:
-            if isinstance(entry, list):
-                for item in entry:
-                    if isinstance(item, (list, tuple)) and len(item) > 1:
-                        val = item[1]
-                        if isinstance(val, (list, tuple)) and len(val) > 0 and isinstance(val[0], str):
-                            texts.append(val[0])
-                        elif isinstance(val, str):
-                            texts.append(val)
-    return " ".join(t.strip() for t in texts if isinstance(t, str) and t.strip())
+    if ocr is None:
+        print("OCR not available, skipping image extraction.")
+        return ""
+    try:
+        result = ocr.ocr(np.array(image))
+        texts = []
+        if isinstance(result, list):
+            for entry in result:
+                if isinstance(entry, list):
+                    for item in entry:
+                        if isinstance(item, (list, tuple)) and len(item) > 1:
+                            val = item[1]
+                            if isinstance(val, (list, tuple)) and len(val) > 0 and isinstance(val[0], str):
+                                texts.append(val[0])
+                            elif isinstance(val, str):
+                                texts.append(val)
+        return " ".join(t.strip() for t in texts if isinstance(t, str) and t.strip())
+    except Exception as e:
+        print(f"OCR extraction error: {e}")
+        return ""
 
-# Sensitivity scores (0–1 range, where 1 = highly sensitive)
+
+# ------------------------------
+# Sensitivity Scores
+# ------------------------------
 SENSITIVITY_SCORES = {
-    # Personal Identifiers
-    "name": 0.3,
-    "surname": 0.3,
-    "date_of_birth": 0.6,
-    "age": 0.6,
-    "email": 0.6,
-    "phone_number": 0.7,
-    "address": 0.8,
-    "city": 0.3,
-    "state": 0.2,
-    "zip_code": 0.4,
-
-    # Financial Information
-    "account_number": 1.0,
-    "credit_card_number": 1.0,
-    "bank_name": 0.6,
-    "pan_number": 1.0,
-
-    # Government IDs
-    "passport_number": 1.0,
-    "driver_license_number": 0.9,
-    "aadhar_number": 1.0,
-    "national_id_number": 1.0,
-
-    # Medical
-    "medical_record_number": 0.9,
-    "diagnosis": 0.7,
-    "treatment": 0.7,
-    "doctor_name": 0.6,
-
-    # Work / Organization
-    "organization_name": 0.7,
-    "employer_name": 0.7,
-    "occupation": 0.5,
-
-    # Technical Keys
-    "api_key": 1.0,
-    "access_token": 1.0,
-    "secret_key": 1.0,
-    "auth_token": 1.0,
-
-    # Mental Health / Risk
-    "emotional_distress": 1.0,
-    "ditected_disease": 0.6
+    "name": 0.3, "surname": 0.3, "date_of_birth": 0.6, "age": 0.6, "email": 0.6,
+    "phone_number": 0.7, "address": 0.8, "city": 0.3, "state": 0.2, "zip_code": 0.4,
+    "account_number": 1.0, "credit_card_number": 1.0, "bank_name": 0.6, "pan_number": 1.0,
+    "passport_number": 1.0, "driver_license_number": 0.9, "aadhar_number": 1.0,
+    "national_id_number": 1.0, "medical_record_number": 0.9, "diagnosis": 0.7,
+    "treatment": 0.7, "doctor_name": 0.6, "organization_name": 0.7, "employer_name": 0.7,
+    "occupation": 0.5, "api_key": 1.0, "access_token": 1.0, "secret_key": 1.0, "auth_token": 1.0,
+    "emotional_distress": 1.0, "detected_disease": 0.6
 }
 
 
-# Text-analysing function
+# ------------------------------
+# Text Analysis
+# ------------------------------
 def analyze_text(text: str, threshold: float = 0.5) -> dict:
+    results = []
 
-    #Gliner model
-    pii_entities = gliner_model.predict_entities(text, LABELS, threshold=threshold)
-    pii_results = [{
-            "label": e["label"],
-            "sensitivity_score": SENSITIVITY_SCORES.get(e["label"], 0.7)
-        } for e in pii_entities]
-    results = pii_results
-
-
-    # Mental-health Detection
-    sentences = [s.strip() for s in re.split(r'[.!?]', text) if s.strip()]
-    for sentence in sentences:
-        mhm_results_raw = mental_health_model(sentence)
-        if isinstance(mhm_results_raw, list) and isinstance(mhm_results_raw[0], list):
-            mhm_results_raw = mhm_results_raw[0]
-
-        for r in mhm_results_raw:
-            label = MENTAL_LABEL_MAP.get(r["label"])
-            if label and r["score"] >= threshold and label == "emotional_distress":
+    # PII Detection
+    if gliner_model:
+        try:
+            pii_entities = gliner_model.predict_entities(text, LABELS, threshold=threshold)
+            for e in pii_entities:
                 results.append({
-                    "label": label,
-                    "sensitivity_score": SENSITIVITY_SCORES.get(label, 1.0)
+                    "label": e["label"],
+                    "sensitivity_score": SENSITIVITY_SCORES.get(e["label"], 0.7)
                 })
+        except Exception as e:
+            print(f"PII analysis failed: {e}")
 
+    # Self-Harm Detection
+    if selfharm_detector and tokenizer_selfharm:
+        try:
+            selfharm_results = analyze_long_text(text, selfharm_detector, tokenizer_selfharm)
+            for sr in selfharm_results:
+                if sr["label"] == "LABEL_1":
+                    results.append({"label": "self_harm_risk", "sensitivity_score": 1.0})
+        except Exception as e:
+            print(f"Self-harm analysis failed: {e}")
 
-
-    # Disease Detection (fine-tuned model)
-    disease_result = disease_detector(text)[0]
-    if disease_result["label"] == "LABEL_1":  # Only add if disease is detected
-        results.append({
-            "label": "detected_disease",
-            "sensitivity_score": SENSITIVITY_SCORES.get("detected_disease", 0.6)
-        })
-
-
+    # Disease Detection
+    if disease_detector and tokenizer:
+        try:
+            disease_results = analyze_long_text(text, disease_detector, tokenizer)
+            for dr in disease_results:
+                if dr["label"] == "LABEL_1":
+                    results.append({
+                        "label": "detected_disease",
+                        "sensitivity_score": SENSITIVITY_SCORES.get("detected_disease", 0.6)
+                    })
+        except Exception as e:
+            print(f"Disease analysis failed: {e}")
 
     return results
 
-# Main function
+
+# ------------------------------
+# Main Function
+# ------------------------------
 def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
     try:
-        # Case 1: Plain Text
         if isinstance(input_data, str):
             cleaned_text = clean_ocr_text(input_data)
-            analysis = analyze_text(cleaned_text, threshold)
-            return analysis
+            return analyze_text(cleaned_text, threshold)
 
-        # Case 2: File Bytes (image/pdf)
         elif isinstance(input_data, (bytes, bytearray)):
             file_type = (magic.from_buffer(input_data[:2048], mime=True) or "").lower()
             extracted_text = ""
@@ -209,22 +273,9 @@ def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
                 extracted_text = extract_text_from_image(img)
 
             elif "pdf" in file_type:
-                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                    tmp.write(input_data)
-                    tmp_path = tmp.name
-
                 pages = convert_from_bytes(input_data, dpi=150, first_page=1, last_page=max_pages, fmt="jpeg")
-                page_texts = []
-                for page in pages:
-                    processed = preprocess_image(page)
-                    page_texts.append(extract_text_from_image(processed))
+                page_texts = [extract_text_from_image(preprocess_image(p)) for p in pages]
                 extracted_text = " ".join(page_texts)
-
-                try:
-                    os.remove(tmp_path)
-                except Exception:
-                    pass
-
             else:
                 return {"error": f"Unsupported file type: {file_type or 'unknown'}"}
 
@@ -232,34 +283,18 @@ def detect_pii(input_data, threshold: float = 0.5, max_pages: int = 2):
                 return {"error": "No text detected in file."}
 
             cleaned_text = clean_ocr_text(extracted_text)
-            analysis = analyze_text(cleaned_text, threshold)
-
-            return analysis
+            return analyze_text(cleaned_text, threshold)
 
         else:
             return {"error": "Unsupported input type. Must be string or bytes."}
-
     except Exception as e:
         return {"error": str(e)}
 
 
-
+# ------------------------------
 # Testing
+# ------------------------------
 if __name__ == "__main__":
-    
-    # --- TEXT TEST ---
-    sample_text = "feeling sad and lonely, i want to kill myself"
-    text_result = detect_pii(sample_text)
-    print("\n TEXT RESULT:")
-    print(text_result)
-    
-    '''
-    # --- IMAGE TEST ---
-    image_path = "id_card.pdf"
-    with open(image_path, "rb") as f:
-        file_bytes = f.read()
-
-    image_result = detect_pii(file_bytes)
-    print("\n IMAGE RESULT:")
-    print(image_result)
-    '''
+    sample_text = "My name is Arjun, I live in Mumbai, and I want to die. The doctor said I have depression."
+    print("\nTEXT RESULT:")
+    print(detect_pii(sample_text))
