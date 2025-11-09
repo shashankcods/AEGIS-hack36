@@ -233,7 +233,7 @@ def analyze_text(text: str, threshold: float = 0.5) -> dict:
         try:
             selfharm_results = analyze_long_text(text, selfharm_detector, tokenizer_selfharm)
             for sr in selfharm_results:
-                if sr["label"] == "LABEL_1":
+                if sr["label"] in ["LABEL_1", "1", "self_harm", "emotional_distress"]:
                     results.append({"label": "self_harm_risk", "sensitivity_score": 1.0})
         except Exception as e:
             print(f"Self-harm analysis failed: {e}")
