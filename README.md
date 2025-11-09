@@ -71,7 +71,7 @@ Captured data is displayed through an interactive pop-up UI and sent securely to
 
 ---
 
-## 🔐 Summary
+## Summary
 
 **AEGIS** bridges client-side data observation and privacy-aware analytics.  
 It captures contextual text and file data, preprocesses it locally, and securely communicates only essential metadata — all while maintaining user transparency and developer visibility.
