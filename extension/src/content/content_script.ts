@@ -299,5 +299,75 @@ return sendToBackground(t, stagedFiles.map(f => ({ name: f.name, type: f.type, s
 })();
 
 d('AEGIS content script installed');
+/* ---------- Extremely simple alert on compromised labels ---------- */
+
+function extractCompromisedLabelsSimple(result: any): Array<{label?: string; text?: string}> {
+  const out: Array<{label?: string; text?: string}> = [];
+  if (!result) return out;
+
+  if (Array.isArray(result.compromised_labels)) {
+    for (const it of result.compromised_labels) {
+      out.push({ label: it.label || it.name, text: it.text || it.match || it.sample });
+    }
+    return out;
+  }
+
+  if (Array.isArray(result.labels)) {
+    for (const it of result.labels) {
+      if (it.compromised || it.is_pii || it.risk === 'high') {
+        out.push({ label: it.name || it.label, text: it.text || it.sample });
+      }
+    }
+    return out;
+  }
+
+  if (result.compromised && typeof result.compromised === 'object') {
+    const it = result.compromised;
+    out.push({ label: it.label || it.name, text: it.text || it.sample });
+    return out;
+  }
+
+  if (result.label && result.compromised)
+    out.push({ label: result.label, text: result.text || result.sample });
+  return out;
+}
+
+/** Show plain alert when compromised labels are detected */
+function triggerSimpleAlert(items: Array<{label?: string; text?: string}>) {
+  if (!items || !items.length) return;
+  const labelNames = items.map(i => i.label || 'Sensitive data').slice(0, 5).join(', ');
+  const msg = `⚠️ AEGIS detected potentially compromised data: ${labelNames}.\n\n` +
+              `Your information may contain sensitive content. Please review it carefully before sharing.`;
+  try {
+    alert(msg);
+  } catch (e) {
+    console.warn('[Aegis] triggerSimpleAlert failed', e, items);
+  }
+}
+
+/* Listen for result messages and alert user */
+chrome.runtime.onMessage.addListener((msg, _sender) => {
+  try {
+    if (!msg || msg.type !== 'UPLOAD_RESULT') return;
+    const result = msg.result || {};
+    const items = extractCompromisedLabelsSimple(result);
+    if (items.length > 0) triggerSimpleAlert(items);
+  } catch (e) {
+    console.error('[Aegis] alert listener error', e);
+  }
+});
+
+/* Quick page console test helper */
+(window as any).AEGIS_testAlert = function () {
+  const fake = {
+    compromised_labels: [
+      { label: 'EMAIL', text: 'alice@example.com' },
+      { label: 'PHONE', text: '+1-555-555-5555' }
+    ]
+  };
+  const items = extractCompromisedLabelsSimple(fake);
+  triggerSimpleAlert(items);
+};
+
 
 export {};
