@@ -1,79 +1,101 @@
-# AEGIS — Secure Prompting Practices
+<h1 align="center">AEGIS — Secure Prompting Practices</h1>
+<p align="center">
+A privacy-first browser extension designed to monitor, analyze, and securely process text and file inputs in real time — ensuring privacy-preserving AI interactions.
+</p>
 
-## Project Summary
+[![Built at Hack36](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)
 
-**AEGIS** is a privacy-first browser extension that captures, analyzes, and securely transmits text and file inputs from web environments for intelligent data monitoring and sensitivity detection.  
+---
 
-It integrates with a **Django + Pathway backend** to perform **real-time content analysis** — detecting personally identifiable information (PII), evaluating sensitivity levels, and enforcing privacy-first handling throughout the data flow.
+## Introduction:
+**AEGIS** is a privacy-aware browser extension that captures, analyzes, and securely transmits text and file inputs from web environments for intelligent sensitivity detection.  
+It integrates with a **Django + Pathway + Redis** backend to perform **real-time content analysis**, identifying personally identifiable information (PII), evaluating sensitivity scores, and maintaining privacy-first data handling.  
 
-The system operates as a **CRXJS + React + TypeScript** extension that runs directly inside the browser, observing user input in target web interfaces.  
-Captured data is displayed through an interactive pop-up UI and sent securely to the backend for event-driven analytics.
+The system operates as a **CRXJS + React + TypeScript** extension, observing user input in browser environments and providing detailed visual insights through a clean popup UI.
+
+---
+
+## Demo Video Link:
+<a href="#">Demo Video Link</a>
+
+---
+
+## Presentation Link:
+<a href="https://docs.google.com/presentation/d/10vXArIEf-o9x8L8SwAFzW25JaCazC9Aice8XeP9UAkM/edit?usp=sharing">View Presentation</a>
+
+---
+
+## Table of Contents:
+1. Introduction  
+2. Core Features  
+3. Technology Stack  
+4. Contributors  
+5. Made at Hack36  
 
 ---
 
 ## Core Features
 
-### 1. Real-Time Input Monitoring
-- Observes and captures text entered into designated input areas.
-- Detects changes dynamically using efficient `MutationObserver` logic.
+### 1. Real-Time Input Monitoring  
+- Observes and captures user text inputs dynamically using efficient `MutationObserver` logic.  
+- Automatically detects edits and new entries in web input fields.
 
 ---
 
-### 2. Privacy-First Architecture
-- All capture logic runs locally in the browser sandbox.
-- Sends only sanitized, encoded data to the background or backend.
-- Adheres to **privacy-by-design** and **data minimization** principles. 
+### 2. Privacy-First Architecture  
+- All data capture and preprocessing occur locally within the browser sandbox.  
+- Only sanitized and encoded metadata is transmitted.  
+- Fully adheres to **privacy-by-design** principles.
 
 ---
 
-### 3. Developer Overlay (Live Debug View)
-- Displays a real-time overlay on web pages showing:
-  - Captured text
-  - Attached file names and sizes
-- Assists developers in verifying capture behavior instantly.
-  
----
-
-### 4. Popup Dashboard (React UI)
-- Clean, minimalist popup interface featuring:
-  - **Sensitivity metrics:** average, high, low scores.
-  - **Summaries:** total flagged inputs, unique labels.
-  - **Visual indicators:** progress bars and count cards.
-- Built using React + TypeScript with CRXJS for compatibility with Chrome MV3.
+### 3. Popup Dashboard (React UI)  
+- A modern, minimalist popup showing:
+  - **Average, high, and low sensitivity scores**
+  - **Flagged inputs and unique labels**
+  - **Visual indicators (bars and cards) for better readability**
+- Built using **React + TypeScript + CRXJS** for Chrome Manifest V3.
 
 ---
 
-### 5. Pathway + Django + Redis Integration
-- Background service worker sends structured capture data to the backend.
-- **Pathway pipeline:** performs live sensitivity scoring and event aggregation.
-- **Django backend:** stores logs, provides REST endpoints, and manages API communication.
-- **Redis bridge:** acts as the real-time message broker between Django and Pathway, ensuring
-  seamless, low-latency data flow between capture ingestion and live analysis.
+### 4. Pathway + Django + Redis Integration  
+- Background service worker sends structured capture data to the backend.  
+- **Pathway pipeline:** performs live sensitivity scoring and event aggregation.  
+- **Django backend:** handles data storage, REST APIs, and visualization endpoints.  
+- **Redis bridge:** connects Django and Pathway for real-time, low-latency data exchange.
 
-### 6. Robust Data Logging
+---
+
+### 5. Robust Data Logging  
 - Each capture event includes:
   - Source (manual, automatic, paste, upload)
-  - Associated metadata
-- Reliable message passing between:
+  - Associated metadata  
+- Ensures reliable communication between:
   - **Content Script → Background Script → Backend**
 
 ---
 
-## Technology Stack
-
-| Layer | Technology |
-|-------|-------------|
-| **Frontend / Extension** | React + TypeScript + CRXJS (Vite) |
-| **Browser API Layer** | Chrome Extensions Manifest V3 |
-| **Backend** | Django REST + Pathway streaming pipeline |
-| **Communication** | Chrome Runtime Messaging API |
-| **Styling** | Minimal grey/white theme (CSS) |
+## Technology Stack:
+1. **Frontend / Extension:** React + TypeScript + CRXJS (Vite)  
+2. **Browser Layer:** Chrome Extensions Manifest V3  
+3. **Backend:** Django REST Framework + Pathway  
+4. **Data Bridge:** Redis  
+5. **Communication:** Chrome Runtime Messaging API  
+6. **Styling:** Minimal grey/white theme (CSS)
 
 ---
 
-## Summary
+## Contributors:
 
-**AEGIS** bridges client-side data observation and privacy-aware analytics.  
-It captures contextual text and file data, preprocesses it locally, and securely communicates only essential metadata — all while maintaining user transparency and developer visibility.
+**Team Name:** Level_Sabke_Niklenge  
 
-> **AEGIS acts as a privacy guardian for user inputs** — combining real-time monitoring, secure encoding, and ethical data analytics in one cohesive ecosystem.
+- [Shashank Lakkarsu](https://github.com/shashankcods)  
+- [Harish Raju](https://github.com/kyrolxg)  
+- [Shabbeer Mohammed](https://github.com/shabbeer2513)  
+- [Mogith Pushparaj](https://github.com/MogithX11)
+
+---
+
+## Made at:
+[![Built at Hack36](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)
+
