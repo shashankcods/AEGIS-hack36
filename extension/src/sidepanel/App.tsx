@@ -1,22 +1,34 @@
-import crxLogo from '@/assets/crx.svg'
-import reactLogo from '@/assets/react.svg'
-import viteLogo from '@/assets/vite.svg'
-import HelloWorld from '@/components/HelloWorld'
+// sidepanel/App.tsx
+import { useEffect, useState } from 'react'
 import './App.css'
 
 export default function App() {
+  const [logs, setLogs] = useState<{ text: string; time: string }[]>([])
+
+  useEffect(() => {
+    // Listen for messages from background/content scripts
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.type === 'AEGIS_LOG') {
+        setLogs((prev) => [
+          { text: msg.payload, time: new Date().toLocaleTimeString() },
+          ...prev,
+        ])
+      }
+    })
+  }, [])
+
   return (
-    <div>
-      <a href="https://vite.dev" target="_blank" rel="noreferrer">
-        <img src={viteLogo} className="logo" alt="Vite logo" />
-      </a>
-      <a href="https://reactjs.org/" target="_blank" rel="noreferrer">
-        <img src={reactLogo} className="logo react" alt="React logo" />
-      </a>
-      <a href="https://crxjs.dev/vite-plugin" target="_blank" rel="noreferrer">
-        <img src={crxLogo} className="logo crx" alt="crx logo" />
-      </a>
-      <HelloWorld msg="Vite + React + CRXJS" />
+    <div className="app-container">
+      <h2>AEGIS Log Viewer</h2>
+      <div className="log-list">
+        {logs.length === 0 && <p>No logs yet.</p>}
+        {logs.map((log, i) => (
+          <div key={i} className="log-item">
+            <span className="log-time">{log.time}</span>
+            <pre className="log-text">{log.text}</pre>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
