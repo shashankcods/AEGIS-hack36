@@ -1,134 +1,165 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import "./popup.css";
 
-type LogEntry = {
-  ts: string;
-  event: string;
-  result?: any;
-  meta?: any;
-};
-
-const STORAGE_ENABLED_KEY = "aegis_enabled";
-
 export default function Popup() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [enabled, setEnabled] = useState<boolean>(true);
-  const [status, setStatus] = useState<string>("idle");
+  const [data] = useState({
+    averageSensitivity: 68,
+    highestSensitivity: 92,
+    lowestSensitivity: 40,
+    totalFlagged: 27,
+    uniqueLabels: 12,
+    highSensitivityPct: 32,
+    lowCount: 10,
+    mediumCount: 12,
+    highCount: 5,
+  });
 
-  // load enabled flag from storage
+  const [labels] = useState([
+    { label: "PII Entities", value: 82 },
+    { label: "Sensitive Keywords", value: 67 },
+    { label: "Confidential Docs", value: 44 },
+    { label: "Financial Mentions", value: 76 },
+    { label: "Medical Info", value: 58 },
+    { label: "Names Detected", value: 89 },
+  ]);
+
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    chrome.storage.local.get([STORAGE_ENABLED_KEY], (items) => {
-      if (items && typeof items[STORAGE_ENABLED_KEY] !== "undefined") {
-        setEnabled(Boolean(items[STORAGE_ENABLED_KEY]));
-      }
-    });
+    const timer = setTimeout(() => setLoaded(true), 100);
+    return () => clearTimeout(timer);
   }, []);
-
-  // subscribe to background messages
-  useEffect(() => {
-    function onMsg(msg: any) {
-      if (!msg) return;
-      if (msg.type === "UPLOAD_RESULT") {
-        const e: LogEntry = { ts: new Date().toLocaleTimeString(), event: "upload_result", result: msg.result };
-        setLogs((p) => [e, ...p].slice(0, 100));
-        setStatus("received");
-        setTimeout(() => setStatus("idle"), 1200);
-      }
-      if (msg.type === "NEW_CAPTURE") {
-        const e: LogEntry = { ts: new Date().toLocaleTimeString(), event: "capture", meta: msg.entry };
-        setLogs((p) => [e, ...p].slice(0, 100));
-      }
-    }
-    chrome.runtime.onMessage.addListener(onMsg);
-    // request recent logs immediately
-    chrome.runtime.sendMessage({ type: "GET_LOGS" }, (resp) => {
-      try {
-        if (resp && resp.ok && Array.isArray(resp.logs)) {
-          const fromServer = resp.logs.map((l: any) => ({ ts: new Date(l.ts).toLocaleTimeString(), event: "history", meta: l }));
-          setLogs((p) => [...fromServer.reverse(), ...p].slice(0, 100));
-        }
-      } catch (e) {}
-    });
-    return () => chrome.runtime.onMessage.removeListener(onMsg);
-  }, []);
-
-  // toggle extension enabled flag
-  function toggleEnabled() {
-    const next = !enabled;
-    chrome.storage.local.set({ [STORAGE_ENABLED_KEY]: next }, () => {
-      setEnabled(next);
-    });
-  }
-
-  // manual capture: execute a small script in the active tab to call window.AEGIS_manualCapture() or dispatch an event
-  async function manualCapture() {
-    setStatus("sending");
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (!tab?.id) return setStatus("idle");
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tab.id },
-          func: () => {
-            // prefer direct function if present
-            try {
-              // @ts-ignore
-              if (window.AEGIS_manualCapture) return window.AEGIS_manualCapture();
-            } catch (_){}
-            // fallback: dispatch a page event your content_script can listen to
-            window.dispatchEvent(new CustomEvent("AEGIS_REQUEST_MANUAL_UPLOAD_FROM_PAGE"));
-            return { ok: true, note: "dispatched" };
-          },
-        },
-        () => {
-          setStatus("sent");
-          setTimeout(() => setStatus("idle"), 800);
-        }
-      );
-    });
-  }
-
-  // clear logs
-  function clearLogs() {
-    setLogs([]);
-  }
 
   return (
-    <div className="aegis-popup-root">
-      <div className="aegis-header">
-        <div className="aegis-title">AEGIS</div>
-        <div className="aegis-controls">
-          <label className="toggle">
-            <input type="checkbox" checked={enabled} onChange={toggleEnabled} />
-            <span className="slider" />
-            <span className="label">{enabled ? "On" : "Off"}</span>
-          </label>
+    <div className="popup-shell">
+      <div className="popup-root">
+        <header className="popup-header centered">
+          <h3>AEGIS</h3>
+        </header>
+
+        {/* === Scrollable container === */}
+        <div className="scroll-container">
+          {labels.map((item, i) => (
+            <div key={i} className="scroll-card">
+              <div className="scroll-label">{item.label}</div>
+              <div className="scroll-bar">
+                <div
+                  className="scroll-bar-fill"
+                  style={{
+                    width: loaded ? `${item.value}%` : 0,
+                  }}
+                ></div>
+              </div>
+              <span className="scroll-value">{item.value}%</span>
+            </div>
+          ))}
+        </div>
+        {/* === End scrollable container === */}
+
+        <div className="card-grid">
+          <div className="metric-card large">
+            <h4>Average Sensitivity</h4>
+            <div className="bar-container">
+              <div
+                className="bar-fill"
+                style={{ width: loaded ? `${data.averageSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.averageSensitivity}%</span>
+          </div>
+
+          <div className="metric-card">
+            <h4>Highest Sensitivity</h4>
+            <div className="bar-container small">
+              <div
+                className="bar-fill high"
+                style={{ width: loaded ? `${data.highestSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.highestSensitivity}%</span>
+          </div>
+
+          <div className="metric-card">
+            <h4>Lowest Sensitivity</h4>
+            <div className="bar-container small">
+              <div
+                className="bar-fill low"
+                style={{ width: loaded ? `${data.lowestSensitivity}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.lowestSensitivity}%</span>
+          </div>
+
+          <div className="metric-card">
+            <h4>Total Flagged Inputs</h4>
+            <div className="circle-wrapper">
+              <div className="circle-indicator">
+                <span>{data.totalFlagged}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card">
+            <h4>Unique Labels</h4>
+            <div className="circle-wrapper">
+              <div className="circle-indicator alt">
+                <span>{data.uniqueLabels}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-card large emphasis">
+            <h4>High Sensitivity %</h4>
+            <div className="bar-container large">
+              <div
+                className="bar-fill medium"
+                style={{ width: loaded ? `${data.highSensitivityPct}%` : 0 }}
+              ></div>
+            </div>
+            <span className="metric-value">{data.highSensitivityPct}%</span>
+          </div>
+
+          <div className="three-card-row">
+            <div className="score-box low">
+              <h5>Low</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical low"
+                  style={{
+                    height: loaded ? `${data.lowCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.lowCount}</span>
+            </div>
+
+            <div className="score-box medium">
+              <h5>Medium</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical medium"
+                  style={{
+                    height: loaded ? `${data.mediumCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.mediumCount}</span>
+            </div>
+
+            <div className="score-box high">
+              <h5>High</h5>
+              <div className="score-visual">
+                <div
+                  className="bar-vertical high"
+                  style={{
+                    height: loaded ? `${data.highCount * 3}px` : 0,
+                  }}
+                ></div>
+              </div>
+              <span>{data.highCount}</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="aegis-sub">
-        <button className="btn primary" onClick={manualCapture}>Manual capture</button>
-        <button className="btn" onClick={() => chrome.runtime.sendMessage({ type: "GET_LOGS" }, (r)=>{})}>Get logs</button>
-        <button className="btn ghost" onClick={clearLogs}>Clear</button>
-        <div className={`status-badge ${status}`}>{status === "idle" ? "idle" : status}</div>
-      </div>
-
-      <div className="aegis-log">
-        {logs.length === 0 && <div className="aegis-empty">No logs yet — trigger a capture</div>}
-        {logs.map((l, i) => (
-          <div className="aegis-log-entry" key={i}>
-            <div className="meta">
-              <span className="evt">{l.event}</span>
-              <span className="ts">{l.ts}</span>
-            </div>
-            <pre className="json">{JSON.stringify(l.result ?? l.meta ?? {}, null, 2)}</pre>
-          </div>
-        ))}
-      </div>
-
-      <footer className="aegis-footer">
-        <small>AEGIS — live prompt logger</small>
-      </footer>
     </div>
   );
 }

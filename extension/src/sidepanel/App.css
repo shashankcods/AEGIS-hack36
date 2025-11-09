@@ -1,0 +1,38 @@
+.app-container {
+  padding: 1.5rem;
+  font-family: system-ui, sans-serif;
+  color: #e6eef8;
+  background: #0b1730;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+h2 {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.75rem;
+}
+
+.log-item {
+  background: #141f3d;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 4px solid #4a9eff;
+}
+
+.log-time {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.log-text {
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  color: #d9e6ff;
+  margin-top: 4px;
+}
