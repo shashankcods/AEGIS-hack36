@@ -12,6 +12,8 @@ const MAX_LOGS_PER_TAB = 500;
 // in-memory logs map (tabId -> array)
 const logsByTab = new Map();
 
+let latestDetections = [];
+
 function d(...args) { if (DEBUG) console.log('[Aegis background]', ...args); }
 
 /* ---------- Basic safety handlers ---------- */
@@ -242,7 +244,25 @@ try {
 
             const okEntry = { ts: Date.now(), type: 'UPLOAD_RESULT', ok: true, result };
             pushLogForTab(tabId, okEntry);
+
+            // ✅ Pretty-print the backend JSON result directly in the service worker console
+            d(`🧠 AEGIS Backend Response for tab ${tabId}:`);
+            try {
+              d(JSON.stringify(result, null, 2));  // Indented for readability
+            } catch (err) {
+              d('Failed to stringify result', err);
+            }
+
+            // Send the result to the content script as usual
             safeBroadcast({ type: 'UPLOAD_RESULT', tabId, result });
+            try {
+              if (tabId && tabId !== 'global') {
+                chrome.tabs.sendMessage(tabId, { type: 'UPLOAD_RESULT', result });
+                d('UPLOAD_RESULT sent to tab', tabId);
+              }
+            } catch (e) {
+              d('sendMessage failed', e);
+            }
             try { sendResp({ ok: true, result }); } catch (e) {}
           } catch (err) {
             const entry = { ts: Date.now(), type: 'UPLOAD_RESULT', ok: false, error: String(err) };

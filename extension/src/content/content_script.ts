@@ -6,6 +6,7 @@
 // - Uses 1 s delay after typing stops (max 10 s force flush)
 // - Overlay still updates instantly
 // -----------------------------------------------------------
+let lastAnalyzeResult: any = null; // ✅ Store latest analyze result
 
 import { debounce } from "@/shared/debounce";  // ✅ new import
 
@@ -20,6 +21,7 @@ type StagedFile = {
 declare global {
   interface Window {
     AEGIS_manualCapture?: () => Promise<any>;
+    AEGIS_getLastResult?: () => any; // ✅ added helper
   }
 }
 
@@ -177,8 +179,8 @@ const debouncedSend = debounce(
     console.log("%c[AEGIS debounce] flush → backend", "color:#8ef");
     sendToBackground(txt, stagedFiles.slice(), src).catch(e => d("bg send err", e));
   },
-  1000,             // 1 s delay
-  { maxWait: 10000 } // 10 s forced send
+  2000,
+  { maxWait: 10000 }
 );
 
 /* ---------- Watcher ---------- */
@@ -235,7 +237,7 @@ let last = "";
               stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
             }
             updateOverlayFiles();
-            onChange("file-input-change"); // file change sends immediately
+            onChange("file-input-change");
           } catch (e) { d("file change err", e); }
         });
       });
@@ -259,7 +261,7 @@ let last = "";
           }
         }
         updateOverlayFiles();
-        onChange("paste"); // paste triggers onChange normally
+        onChange("paste");
       } catch (e) { d("paste err", e); }
     }, { passive: true });
 
@@ -302,7 +304,7 @@ let last = "";
     if (txt === last) return;
     last = txt;
 
-    updateOverlayPrompt(txt); // overlay updates instantly
+    updateOverlayPrompt(txt);
 
     const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || (f.buffer ? f.buffer.byteLength : 0)), 0);
     if (totalBytes > MAX_TRANSFER_BYTES) {
@@ -312,7 +314,6 @@ let last = "";
       return;
     }
 
-    // ✅ Debounced send
     debouncedSend(txt, source);
   }
 
@@ -320,8 +321,8 @@ let last = "";
 })();
 
 d('AEGIS content script installed');
-/* ---------- Extremely simple alert on compromised labels ---------- */
 
+/* ---------- Alert system for compromised labels ---------- */
 function extractCompromisedLabelsSimple(result: any): Array<{label?: string; text?: string}> {
   const out: Array<{label?: string; text?: string}> = [];
   if (!result) return out;
@@ -366,19 +367,32 @@ function triggerSimpleAlert(items: Array<{label?: string; text?: string}>) {
   }
 }
 
-/* Listen for result messages and alert user */
+/* ---------- Message listener ---------- */
 chrome.runtime.onMessage.addListener((msg, _sender) => {
   try {
-    if (!msg || msg.type !== 'UPLOAD_RESULT') return;
-    const result = msg.result || {};
-    const items = extractCompromisedLabelsSimple(result);
-    if (items.length > 0) triggerSimpleAlert(items);
+    if (!msg || msg.type !== "UPLOAD_RESULT") return;
+
+    lastAnalyzeResult = msg.result || {}; // ✅ store globally
+    const detections = lastAnalyzeResult.detections;
+
+    if (Array.isArray(detections) && detections.length > 0) {
+      // Format all label–score pairs line by line
+      const formatted = detections
+        .map((d: any) => `${d.label} — ${d.sensitivity_score}`)
+        .join("\n");
+
+      // Alert clean message
+      alert(`🧠 AEGIS Detections:\n\n${formatted}`);
+    } else {
+      alert("🧠 AEGIS Detections:\n\nNo sensitive labels detected.");
+    }
   } catch (e) {
-    console.error('[Aegis] alert listener error', e);
+    console.error("[Aegis] alert listener error", e);
   }
 });
 
-/* Quick page console test helper */
+
+/* ---------- Manual test helpers ---------- */
 (window as any).AEGIS_testAlert = function () {
   const fake = {
     compromised_labels: [
@@ -388,6 +402,12 @@ chrome.runtime.onMessage.addListener((msg, _sender) => {
   };
   const items = extractCompromisedLabelsSimple(fake);
   triggerSimpleAlert(items);
+};
+
+// ✅ Debug: inspect latest /api/analyze result
+(window as any).AEGIS_getLastResult = function () {
+  console.log('[Aegis] Last analyze result:', lastAnalyzeResult);
+  return lastAnalyzeResult;
 };
 
 
