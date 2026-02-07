@@ -87,7 +87,7 @@ The system operates as a **CRXJS + React + TypeScript** extension, observing use
 
 ## Contributors:
 
-**Team Name:** Level_Sabke_Niklenge  
+**Team Name:** Figma Boys
 
 - [Shashank Lakkarsu](https://github.com/shashankcods)  
 - [Harish Raju](https://github.com/kyrolxg)  
