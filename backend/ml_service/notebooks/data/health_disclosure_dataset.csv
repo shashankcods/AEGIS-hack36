@@ -1,0 +1,401 @@
+text,label,category
+"I was diagnosed with type 2 diabetes during my last checkup.",1,diagnosis
+"My doctor confirmed that I have bronchial asthma.",1,diagnosis
+"I have been living with rheumatoid arthritis for three years.",1,diagnosis
+"The specialist diagnosed me with chronic kidney disease.",1,diagnosis
+"I was told that I have an underactive thyroid.",1,diagnosis
+"My medical report says I have iron-deficiency anemia.",1,diagnosis
+"I have epilepsy and was diagnosed when I was sixteen.",1,diagnosis
+"The dermatologist confirmed that I have psoriasis.",1,diagnosis
+"I was recently diagnosed with high blood pressure.",1,diagnosis
+"My cardiologist says I have an irregular heartbeat.",1,diagnosis
+"I have a severe peanut allergy.",1,diagnosis
+"The scan showed that I have gallstones.",1,diagnosis
+"I was diagnosed with endometriosis last month.",1,diagnosis
+"My doctor identified a vitamin B12 deficiency.",1,diagnosis
+"I have chronic migraine according to my neurologist.",1,diagnosis
+"The clinic confirmed that I have pneumonia.",1,diagnosis
+"I was diagnosed with sleep apnea after a sleep study.",1,diagnosis
+"My physician says I have acid reflux disease.",1,diagnosis
+"I have eczema that was diagnosed in childhood.",1,diagnosis
+"The biopsy confirmed that I have skin cancer.",1,diagnosis
+"I was told I have polycystic ovary syndrome.",1,diagnosis
+"My doctor diagnosed me with celiac disease.",1,diagnosis
+"I have glaucoma in my left eye.",1,diagnosis
+"The hospital diagnosed me with dengue fever.",1,diagnosis
+"I was diagnosed with a herniated disc in my lower back.",1,diagnosis
+"I have had a dry cough and fever since Tuesday.",1,symptoms
+"My chest feels tight whenever I climb the stairs.",1,symptoms
+"I keep getting dizzy when I stand up.",1,symptoms
+"I have a painful rash spreading across my arms.",1,symptoms
+"My joints have been swollen and stiff every morning.",1,symptoms
+"I cannot sleep because my back pain is getting worse.",1,symptoms
+"I have been vomiting and cannot keep food down.",1,symptoms
+"My vision has become blurry over the past week.",1,symptoms
+"I feel short of breath even while sitting still.",1,symptoms
+"I found a lump near my collarbone yesterday.",1,symptoms
+"My stomach hurts after almost every meal.",1,symptoms
+"I have been unusually tired and weak for a month.",1,symptoms
+"There is a constant ringing sound in my right ear.",1,symptoms
+"I have numbness and tingling in both hands.",1,symptoms
+"My throat is sore and swallowing has become difficult.",1,symptoms
+"I have lost nearly six kilos without trying.",1,symptoms
+"My heart keeps racing for no clear reason.",1,symptoms
+"I have been getting severe headaches with nausea.",1,symptoms
+"My ankle is still swollen after the fall.",1,symptoms
+"I feel a burning pain whenever I urinate.",1,symptoms
+"I have had diarrhea for the last four days.",1,symptoms
+"My skin and eyes have started looking yellow.",1,symptoms
+"I wake up gasping for air several times at night.",1,symptoms
+"I have been wheezing since I cleaned the dusty room.",1,symptoms
+"My fingers turn pale and painful in cold weather.",1,symptoms
+"My COVID test came back positive this morning.",1,test_result
+"The blood test showed that my glucose level is high.",1,test_result
+"I tested negative for malaria at the clinic.",1,test_result
+"My MRI revealed inflammation around the knee.",1,test_result
+"The pregnancy test I took was positive.",1,test_result
+"My cholesterol result was above the normal range.",1,test_result
+"The biopsy result for my mole was benign.",1,test_result
+"I tested negative for HIV last week.",1,test_result
+"My X-ray showed a small fracture in my wrist.",1,test_result
+"The lab found low hemoglobin in my blood sample.",1,test_result
+"My thyroid test results were normal.",1,test_result
+"The scan did not show any tumor in my lungs.",1,test_result
+"My allergy test confirmed a reaction to shellfish.",1,test_result
+"The doctor said my liver enzymes are elevated.",1,test_result
+"My tuberculosis screening result was negative.",1,test_result
+"The ECG found an abnormal rhythm in my heart.",1,test_result
+"My urine test showed signs of an infection.",1,test_result
+"The test confirmed that I am not diabetic.",1,test_result
+"My bone-density scan showed early osteoporosis.",1,test_result
+"The culture from my throat tested positive for strep.",1,test_result
+"My latest cancer screening was clear.",1,test_result
+"The ultrasound found a cyst on my ovary.",1,test_result
+"My vitamin D level came back very low.",1,test_result
+"The rapid flu test I took was negative.",1,test_result
+"My hearing test found mild loss in one ear.",1,test_result
+"I take metformin twice a day for my diabetes.",1,medication
+"My doctor prescribed an inhaler for my asthma.",1,medication
+"I am currently taking antibiotics for a sinus infection.",1,medication
+"I use insulin before every meal.",1,medication
+"My blood-pressure tablets make me feel light-headed.",1,medication
+"I started a new thyroid medicine this week.",1,medication
+"I take antihistamines whenever my allergies flare up.",1,medication
+"My psychiatrist prescribed medication for my anxiety.",1,medication
+"I have been taking painkillers for my injured shoulder.",1,medication
+"The doctor reduced the dose of my seizure medicine.",1,medication
+"I use a medicated cream to control my eczema.",1,medication
+"I was prescribed iron tablets for anemia.",1,medication
+"My migraine medicine is no longer working well.",1,medication
+"I take cholesterol medication every night.",1,medication
+"The clinic put me on antiviral medicine for shingles.",1,medication
+"I need a steroid inhaler during allergy season.",1,medication
+"My doctor asked me to stop one of my heart medicines.",1,medication
+"I am taking vitamin D supplements for a deficiency.",1,medication
+"The new antibiotic gave me a rash.",1,medication
+"I use prescription eye drops for glaucoma.",1,medication
+"I take medication to prevent blood clots.",1,medication
+"My acne improved after I started the prescribed tablets.",1,medication
+"I carry an epinephrine injector because of my allergy.",1,medication
+"The sleeping pills I was prescribed make me groggy.",1,medication
+"I take an antacid daily for chronic reflux.",1,medication
+"I am receiving physiotherapy for my knee injury.",1,treatment
+"My chemotherapy sessions begin next Monday.",1,treatment
+"I have dialysis three times each week.",1,treatment
+"I am attending speech therapy after my stroke.",1,treatment
+"My doctor scheduled surgery to remove my gallbladder.",1,treatment
+"I started radiation treatment for the tumor.",1,treatment
+"I am following a rehabilitation program for my back.",1,treatment
+"The dentist performed a root canal on me yesterday.",1,treatment
+"I am using a CPAP machine for sleep apnea.",1,treatment
+"My broken leg is in a cast for six weeks.",1,treatment
+"I go for weekly allergy injections.",1,treatment
+"I am receiving occupational therapy for my hand.",1,treatment
+"My doctor wants to monitor the cyst before treating it.",1,treatment
+"I had laser treatment for my eye condition.",1,treatment
+"I am doing breathing exercises as part of pulmonary rehab.",1,treatment
+"The hospital removed my appendix last night.",1,treatment
+"I am on bed rest while my fracture heals.",1,treatment
+"My wound needs to be cleaned and dressed every day.",1,treatment
+"I am starting hormone therapy for my condition.",1,treatment
+"The cardiologist fitted me with a pacemaker.",1,treatment
+"I receive regular injections for my autoimmune disease.",1,treatment
+"I am having counseling as part of my recovery.",1,treatment
+"My doctor placed me on a low-sodium treatment plan.",1,treatment
+"I underwent cataract surgery on my right eye.",1,treatment
+"I need another round of treatment for the infection.",1,treatment
+"I was diagnosed with generalized anxiety disorder.",1,mental_health
+"I have been experiencing panic attacks at work.",1,mental_health
+"My therapist is helping me manage depression.",1,mental_health
+"I have obsessive thoughts that interfere with my day.",1,mental_health
+"I was diagnosed with bipolar disorder in college.",1,mental_health
+"My social anxiety makes group conversations difficult.",1,mental_health
+"I have been unable to concentrate because of burnout.",1,mental_health
+"My doctor says I am experiencing post-traumatic stress.",1,mental_health
+"I take medication for attention deficit disorder.",1,mental_health
+"I have been feeling hopeless and withdrawn lately.",1,mental_health
+"My insomnia gets worse when my anxiety increases.",1,mental_health
+"I attend therapy for an eating disorder.",1,mental_health
+"I was treated for postpartum depression after delivery.",1,mental_health
+"My mood has been unstable since I changed medication.",1,mental_health
+"I struggle with intense fear in crowded places.",1,mental_health
+"My counselor diagnosed me with a stress-related disorder.",1,mental_health
+"I have recurring nightmares connected to an accident.",1,mental_health
+"I am receiving treatment for alcohol dependence.",1,mental_health
+"My doctor is evaluating me for adult ADHD.",1,mental_health
+"I have been having episodes of severe anxiety at night.",1,mental_health
+"My depression returned after several symptom-free months.",1,mental_health
+"I am in therapy to cope with grief and panic symptoms.",1,mental_health
+"I was admitted for treatment of a manic episode.",1,mental_health
+"My compulsive checking has become hard to control.",1,mental_health
+"I am recovering from an eating disorder.",1,mental_health
+"My mother was diagnosed with breast cancer.",1,family_health
+"My younger brother has severe asthma.",1,family_health
+"My father takes insulin for diabetes.",1,family_health
+"My wife is being treated for pneumonia.",1,family_health
+"My son tested positive for influenza.",1,family_health
+"My grandmother has advanced dementia.",1,family_health
+"My sister is taking medication for depression.",1,family_health
+"My husband had heart surgery last year.",1,family_health
+"My daughter has a hearing impairment.",1,family_health
+"My uncle is receiving dialysis for kidney failure.",1,family_health
+"My cousin was recently diagnosed with lupus.",1,family_health
+"My partner has been having frequent panic attacks.",1,family_health
+"My grandfather lost his vision because of glaucoma.",1,family_health
+"My aunt is recovering from a stroke.",1,family_health
+"My nephew has a serious egg allergy.",1,family_health
+"My roommate is taking antibiotics for tuberculosis.",1,family_health
+"My closest friend is undergoing chemotherapy.",1,family_health
+"My mother tested negative for COVID yesterday.",1,family_health
+"My brother's scan found a kidney stone.",1,family_health
+"My father has chronic pain in both knees.",1,family_health
+"My spouse was admitted with dengue fever.",1,family_health
+"My child is being assessed for a learning disability.",1,family_health
+"My sister uses a wheelchair after her spinal injury.",1,family_health
+"My dad's cholesterol is finally back in the normal range.",1,family_health
+"My mother has started treatment for osteoporosis.",1,family_health
+"I do not have diabetes according to my latest test.",1,health_status
+"I have no known food allergies.",1,health_status
+"I am fully vaccinated against hepatitis B.",1,health_status
+"I recovered from COVID two weeks ago.",1,health_status
+"I have been cancer-free for five years.",1,health_status
+"I am currently eight weeks pregnant.",1,health_status
+"I use a wheelchair because of a spinal cord injury.",1,health_status
+"I have partial hearing loss in my left ear.",1,health_status
+"I am legally blind without corrective assistance.",1,health_status
+"I have not had an asthma attack in over a year.",1,health_status
+"I am allergic to penicillin.",1,health_status
+"I have a pacemaker implanted in my chest.",1,health_status
+"I donated a kidney several years ago.",1,health_status
+"I am still recovering from abdominal surgery.",1,health_status
+"I have never tested positive for tuberculosis.",1,health_status
+"I am in remission from leukemia.",1,health_status
+"I cannot walk long distances because of my disability.",1,health_status
+"I am blood type O negative.",1,health_status
+"I have a medical implant in my right knee.",1,health_status
+"I am free of symptoms after finishing treatment.",1,health_status
+"I have not taken antidepressants for six months.",1,health_status
+"I am waiting for the results of a genetic test.",1,health_status
+"I wear a hearing aid in both ears.",1,health_status
+"I have been sober for eleven months.",1,health_status
+"I am scheduled for a health screening next week.",1,health_status
+"What are the common symptoms of type 2 diabetes?",0,education
+"How does an inhaler help people with asthma?",0,education
+"Can you explain the difference between arthritis and osteoporosis?",0,education
+"Why can kidney disease cause fluid retention?",0,education
+"What does the thyroid gland do in the body?",0,education
+"Which foods are good sources of dietary iron?",0,education
+"How does epilepsy affect electrical activity in the brain?",0,education
+"What usually triggers a psoriasis flare?",0,education
+"Why is high blood pressure called a silent condition?",0,education
+"How does the heart maintain a regular rhythm?",0,education
+"What happens during a severe allergic reaction?",0,education
+"How are gallstones normally detected?",0,education
+"What are the usual treatment options for endometriosis?",0,education
+"Why is vitamin B12 important for red blood cells?",0,education
+"What is the difference between a migraine and a headache?",0,education
+"How does pneumonia affect the lungs?",0,education
+"What is measured during a sleep study?",0,education
+"Why does acid reflux cause a burning sensation?",0,education
+"Is eczema contagious between people?",0,education
+"How does a biopsy help doctors identify cancer?",0,education
+"What causes polycystic ovary syndrome?",0,education
+"Why must people with celiac disease avoid gluten?",0,education
+"How can glaucoma gradually affect vision?",0,education
+"How is dengue transmitted by mosquitoes?",0,education
+"What is a herniated disc?",0,education
+"Researchers published a study on diabetes prevention in adults.",0,research_news
+"A national report described rising asthma rates in large cities.",0,research_news
+"The university is testing a new treatment for rheumatoid arthritis.",0,research_news
+"Scientists identified a possible marker for kidney disease.",0,research_news
+"A medical journal reviewed recent advances in thyroid care.",0,research_news
+"The survey estimated anemia rates across several regions.",0,research_news
+"Researchers are studying new methods for detecting epilepsy.",0,research_news
+"A clinical trial is comparing two treatments for psoriasis.",0,research_news
+"The health ministry launched a campaign about blood pressure.",0,research_news
+"A new paper explains genetic factors linked to irregular heartbeat.",0,research_news
+"The article discusses safer emergency care for severe allergies.",0,research_news
+"Researchers reported progress in dissolving certain gallstones.",0,research_news
+"A conference session focused on endometriosis awareness.",0,research_news
+"The new nutrition report covers vitamin deficiencies worldwide.",0,research_news
+"A hospital study compared several migraine prevention methods.",0,research_news
+"The newspaper reported an increase in seasonal pneumonia cases.",0,research_news
+"Engineers designed a quieter machine for sleep studies.",0,research_news
+"A research team examined dietary factors in acid reflux.",0,research_news
+"The medical newsletter summarizes updated eczema guidelines.",0,research_news
+"The cancer registry released its annual statistical report.",0,research_news
+"A public seminar will discuss reproductive health research.",0,research_news
+"Scientists are investigating improved tests for celiac disease.",0,research_news
+"The clinic published general guidance about glaucoma screening.",0,research_news
+"The local news covered a mosquito-control program for dengue.",0,research_news
+"A sports medicine paper describes rehabilitation after disc injuries.",0,research_news
+"If someone developed a persistent cough, when should they seek care?",0,hypothetical
+"Suppose a patient felt dizzy after standing; what could a doctor check?",0,hypothetical
+"If a person had a spreading rash, which details would be useful to record?",0,hypothetical
+"Imagine someone woke with stiff joints every day; what tests might be considered?",0,hypothetical
+"What advice applies if a person cannot sleep because of pain?",0,hypothetical
+"If someone kept vomiting, how could dehydration be prevented?",0,hypothetical
+"Suppose a patient's vision suddenly became blurry; is that urgent?",0,hypothetical
+"If a person were short of breath at rest, what warning signs matter?",0,hypothetical
+"Imagine finding an unexplained lump; what is the usual next step?",0,hypothetical
+"If someone had stomach pain after meals, what information should they track?",0,hypothetical
+"Suppose an adult felt tired for weeks; which common causes are checked?",0,hypothetical
+"If a person heard ringing in one ear, which specialist might help?",0,hypothetical
+"Imagine someone experienced tingling in both hands; what could be evaluated?",0,hypothetical
+"If swallowing became difficult, when would emergency help be needed?",0,hypothetical
+"Suppose a person lost weight unexpectedly; which doctor should they contact?",0,hypothetical
+"If someone's heart raced occasionally, what details should they tell a clinician?",0,hypothetical
+"Imagine a patient had headaches with nausea; what questions would a doctor ask?",0,hypothetical
+"If an ankle stayed swollen after a fall, would an X-ray be useful?",0,hypothetical
+"Suppose someone felt burning during urination; which test is commonly used?",0,hypothetical
+"If a traveler developed diarrhea, how should they watch for dehydration?",0,hypothetical
+"Imagine a person's skin became yellow; what organs might be checked?",0,hypothetical
+"If someone woke up gasping, could a sleep study be recommended?",0,hypothetical
+"Suppose dust caused wheezing in a person; what precautions could help?",0,hypothetical
+"If fingers changed color in the cold, what should be noted?",0,hypothetical
+"Imagine a patient had an abnormal blood result; how is a repeat test used?",0,hypothetical
+"In the novel, Arjun is diagnosed with diabetes after fainting at school.",0,fictional
+"The movie follows a pilot named Lena who manages severe asthma.",0,fictional
+"In my short story, the king develops painful arthritis.",0,fictional
+"The fictional detective needs dialysis while solving the case.",0,fictional
+"In the play, Meera learns that her thyroid is underactive.",0,fictional
+"The novel's main character is treated for anemia.",0,fictional
+"In this screenplay, a musician hides an epilepsy diagnosis.",0,fictional
+"The comic-book hero develops psoriasis after a laboratory accident.",0,fictional
+"In the story, the mayor struggles to control high blood pressure.",0,fictional
+"The television character has an irregular heartbeat.",0,fictional
+"In my fictional scene, the chef has a dangerous nut allergy.",0,fictional
+"The fantasy prince is treated for mysterious gallstones.",0,fictional
+"In the novel, a dancer discusses living with endometriosis.",0,fictional
+"The game character collects herbs to cure a vitamin deficiency.",0,fictional
+"In this poem, a sailor describes a blinding migraine.",0,fictional
+"The fictional village doctor treats an outbreak of pneumonia.",0,fictional
+"In the series, a lawyer uses a machine for sleep apnea.",0,fictional
+"The book's narrator gives a character chronic acid reflux.",0,fictional
+"In my animation, a child has magical patches resembling eczema.",0,fictional
+"The crime novel reveals that the victim had skin cancer.",0,fictional
+"In the script, a student character talks about PCOS.",0,fictional
+"The fictional baker learns to avoid gluten because of celiac disease.",0,fictional
+"In the radio drama, an elderly character develops glaucoma.",0,fictional
+"The story is about a traveler who catches dengue on an imaginary island.",0,fictional
+"In the game, the warrior recovers from a herniated disc.",0,fictional
+"An anonymous survey participant reported taking insulin.",0,anonymized
+"One de-identified hospital record mentioned severe asthma.",0,anonymized
+"A masked research response described long-term joint pain.",0,anonymized
+"An unnamed case in the dataset involved kidney treatment.",0,anonymized
+"A de-identified patient record contained an abnormal thyroid result.",0,anonymized
+"One anonymous respondent reported low iron levels.",0,anonymized
+"A coded study entry indicated a history of seizures.",0,anonymized
+"An anonymized clinic note described recurring skin plaques.",0,anonymized
+"One unidentified participant recorded high blood pressure.",0,anonymized
+"A de-identified ECG sample showed an irregular rhythm.",0,anonymized
+"An anonymous questionnaire mentioned a food allergy.",0,anonymized
+"A masked record in the study noted gallbladder stones.",0,anonymized
+"One unnamed interviewee discussed pelvic pain.",0,anonymized
+"A de-identified nutrition record showed low vitamin levels.",0,anonymized
+"An anonymous diary entry in the research set described migraines.",0,anonymized
+"A coded hospital case involved bacterial pneumonia.",0,anonymized
+"One unidentified sleep-study record showed breathing interruptions.",0,anonymized
+"An anonymized survey answer mentioned frequent heartburn.",0,anonymized
+"A de-identified dermatology image was labeled as eczema.",0,anonymized
+"One masked pathology record contained a cancer finding.",0,anonymized
+"An anonymous health survey included reproductive symptoms.",0,anonymized
+"A coded laboratory sample was associated with gluten sensitivity.",0,anonymized
+"An unidentified screening record showed raised eye pressure.",0,anonymized
+"One de-identified case report described dengue recovery.",0,anonymized
+"An anonymous rehabilitation log mentioned lower-back pain.",0,anonymized
+"The hospital opens its outpatient department at eight o'clock.",0,healthcare_general
+"Please explain how to book a routine medical appointment.",0,healthcare_general
+"The pharmacy closes earlier on public holidays.",0,healthcare_general
+"Doctors use electronic records to organize patient visits.",0,healthcare_general
+"The new clinic has ramps and accessible entrances.",0,healthcare_general
+"Where can visitors park near the medical center?",0,healthcare_general
+"The health insurance form is available on the website.",0,healthcare_general
+"Nurses attended a workshop on hospital communication.",0,healthcare_general
+"The laboratory processes routine samples from Monday to Saturday.",0,healthcare_general
+"The ambulance service introduced a new contact number.",0,healthcare_general
+"Medical students are learning how to take a patient history.",0,healthcare_general
+"The hospital cafeteria added more vegetarian meals.",0,healthcare_general
+"A prescription normally includes the medicine name and dosage.",0,healthcare_general
+"The clinic upgraded its appointment reminder system.",0,healthcare_general
+"The medical library received several new textbooks.",0,healthcare_general
+"Visitors must wear an identification badge inside the ward.",0,healthcare_general
+"The community center is hosting a first-aid class.",0,healthcare_general
+"The blood donation camp begins at nine in the morning.",0,healthcare_general
+"The hospital hired additional reception staff.",0,healthcare_general
+"A pharmacist can explain how medicine labels are written.",0,healthcare_general
+"The university added a course on healthcare ethics.",0,healthcare_general
+"The clinic website lists the available departments.",0,healthcare_general
+"The waiting room now has a digital token display.",0,healthcare_general
+"The medical conference starts next Friday.",0,healthcare_general
+"The health center accepts appointments by phone.",0,healthcare_general
+"I submitted my software assignment before the deadline.",0,unrelated
+"My sister bought a blue bicycle yesterday.",0,unrelated
+"We are planning a trip to the mountains.",0,unrelated
+"My father enjoys reading history books.",0,unrelated
+"I have a meeting with the design team at noon.",0,unrelated
+"The weather is cooler than it was last week.",0,unrelated
+"My roommate cooked pasta for dinner.",0,unrelated
+"I am learning Python for a college project.",0,unrelated
+"Our train leaves from platform six.",0,unrelated
+"The football match ended in a draw.",0,unrelated
+"My phone battery needs to be replaced.",0,unrelated
+"She is preparing slides for tomorrow's presentation.",0,unrelated
+"We adopted a small dog from the shelter.",0,unrelated
+"The library has extended its opening hours.",0,unrelated
+"I ordered a keyboard from an online store.",0,unrelated
+"My cousin is studying mechanical engineering.",0,unrelated
+"The garden needs water because the soil is dry.",0,unrelated
+"I forgot to charge my laptop last night.",0,unrelated
+"The class elected a new student representative.",0,unrelated
+"My mother is watching a cooking program.",0,unrelated
+"We moved the chairs into the conference room.",0,unrelated
+"The bus was delayed by heavy traffic.",0,unrelated
+"I am comparing prices for a new monitor.",0,unrelated
+"Our team finished the prototype this afternoon.",0,unrelated
+"He has two interviews scheduled for Monday.",0,unrelated
+"Wash hands regularly to reduce the spread of infections.",0,public_advice
+"Seek urgent medical help when breathing becomes severely difficult.",0,public_advice
+"Balanced meals can support general health and energy.",0,public_advice
+"Regular exercise can help maintain cardiovascular fitness.",0,public_advice
+"Vaccination programs protect communities from preventable disease.",0,public_advice
+"A persistent unexplained symptom should be discussed with a clinician.",0,public_advice
+"Do not share prescription medicine with another person.",0,public_advice
+"Read the dosage instructions before taking any medicine.",0,public_advice
+"Emergency services should be contacted for signs of a stroke.",0,public_advice
+"Using sunscreen can reduce damage from ultraviolet light.",0,public_advice
+"Clean drinking water helps prevent many intestinal infections.",0,public_advice
+"Routine screening can identify some conditions at an earlier stage.",0,public_advice
+"Adequate sleep supports concentration and emotional well-being.",0,public_advice
+"Mosquito nets can reduce the risk of mosquito-borne illness.",0,public_advice
+"Antibiotics should only be used as directed by a qualified professional.",0,public_advice
+"A first-aid kit should be checked and restocked regularly.",0,public_advice
+"Protective equipment can reduce injuries during contact sports.",0,public_advice
+"Food labels can help people avoid ingredients that trigger allergies.",0,public_advice
+"Mental health concerns deserve the same care as physical symptoms.",0,public_advice
+"Health information should be shared only through secure channels.",0,public_advice
+"Medical advice from social media should be checked with reliable sources.",0,public_advice
+"Staying hydrated is important during hot weather.",0,public_advice
+"Regular breaks can reduce eye strain during computer work.",0,public_advice
+"Hearing protection is useful around very loud machinery.",0,public_advice
+"A qualified clinician should interpret diagnostic test results.",0,public_advice

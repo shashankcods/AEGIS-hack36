@@ -1,0 +1,401 @@
+text,label,category,split
+I have been thinking about ending my life lately,1,current_ideation,train
+I do not want to be alive tomorrow,1,current_ideation,train
+I keep wishing I could disappear permanently,1,current_ideation,validation
+I feel as if there is no reason for me to continue,1,current_ideation,train
+I have started thinking that death is my only escape,1,current_ideation,test
+I wonder whether everyone would be better without me,1,current_ideation,train
+My thoughts keep returning to suicide at night,1,current_ideation,train
+I cannot picture myself having a future anymore,1,current_ideation,train
+I have been questioning whether my life is worth living,1,current_ideation,train
+I sometimes hope that I will not wake up,1,current_ideation,train
+I feel ready to give up on being alive,1,current_ideation,train
+I keep imagining that I am no longer here,1,current_ideation,validation
+I am afraid my suicidal thoughts are getting stronger,1,current_ideation,train
+I have thought about taking my own life this week,1,current_ideation,train
+I no longer care whether I survive,1,current_ideation,validation
+I feel trapped and think dying would stop the pain,1,current_ideation,validation
+I have been wondering what it would be like if I were gone,1,current_ideation,train
+I cannot stop thinking that life should end for me,1,current_ideation,train
+I feel that I have nothing left to live for,1,current_ideation,train
+I am thinking about suicide more often than before,1,current_ideation,test
+I wish my life could simply stop tonight,1,current_ideation,train
+I have caught myself wanting to die several times today,1,current_ideation,train
+I feel like I should not exist anymore,1,current_ideation,test
+I have been considering whether to end everything,1,current_ideation,test
+I am scared because I do not want to stay alive,1,current_ideation,train
+I feel an urge to hurt myself when I am alone,1,self_harm_urge,train
+I am struggling not to cut myself again,1,self_harm_urge,train
+The urge to harm myself returned this morning,1,self_harm_urge,train
+I keep wanting to injure myself when I feel overwhelmed,1,self_harm_urge,test
+I am tempted to relapse into self-harm tonight,1,self_harm_urge,test
+I worry that I may hurt myself after everyone leaves,1,self_harm_urge,train
+I have been fighting the impulse to harm myself all day,1,self_harm_urge,train
+I feel like taking my pain out on my own body,1,self_harm_urge,train
+My self-harm urges have become difficult to ignore,1,self_harm_urge,train
+I am having thoughts about cutting myself again,1,self_harm_urge,train
+I want to hurt myself even though I know I should not,1,self_harm_urge,train
+I keep thinking about injuring myself to cope,1,self_harm_urge,train
+I am afraid I will give in to the urge to self-harm,1,self_harm_urge,validation
+I feel unsafe because I want to harm myself,1,self_harm_urge,train
+I have an urge to punish myself physically,1,self_harm_urge,test
+I nearly harmed myself during a panic attack today,1,self_harm_urge,validation
+I am trying to resist thoughts of hurting my body,1,self_harm_urge,train
+I keep reaching the point where I want to self-harm,1,self_harm_urge,train
+I feel pulled toward hurting myself when I become numb,1,self_harm_urge,validation
+I am scared of what I might do to myself tonight,1,self_harm_urge,test
+I have been hiding how strong my self-harm urges are,1,self_harm_urge,train
+I want to injure myself whenever the memories return,1,self_harm_urge,train
+I am having trouble controlling the impulse to hurt myself,1,self_harm_urge,validation
+I can feel the urge to self-harm building again,1,self_harm_urge,train
+I need company because I may hurt myself if left alone,1,self_harm_urge,train
+I attempted suicide several years ago,1,past_history,validation
+I used to hurt myself during school,1,past_history,train
+I harmed myself again last weekend,1,past_history,train
+I survived a suicide attempt when I was younger,1,past_history,train
+I have scars from times when I deliberately injured myself,1,past_history,train
+I went through a period of frequent self-harm last year,1,past_history,train
+I tried to take my own life during college,1,past_history,train
+I hurt myself on purpose yesterday,1,past_history,train
+I once wrote a goodbye note because I planned to die,1,past_history,train
+I was hospitalized after attempting suicide,1,past_history,validation
+I relapsed and self-harmed two days ago,1,past_history,test
+I spent much of my teenage years thinking about suicide,1,past_history,validation
+I previously used self-harm to manage intense emotions,1,past_history,validation
+I made an attempt on my life last winter,1,past_history,train
+I concealed my self-inflicted injuries from my family,1,past_history,test
+I had recurring suicidal thoughts throughout last month,1,past_history,train
+I deliberately hurt myself after an argument last night,1,past_history,train
+I have a history of self-harm that few people know about,1,past_history,test
+I nearly ended my life during a difficult breakup,1,past_history,train
+I used to think about dying every day,1,past_history,train
+I acted on a self-harm thought earlier this week,1,past_history,train
+I attempted to end my life before starting therapy,1,past_history,train
+I hid my past self-harm from my closest friends,1,past_history,train
+I injured myself intentionally during a crisis last year,1,past_history,test
+I struggled with suicidal ideation throughout high school,1,past_history,train
+I am six months free from self-harm,1,recovery,test
+I am recovering from a period of suicidal thoughts,1,recovery,test
+Therapy has helped me stop hurting myself,1,recovery,validation
+I have not self-harmed for a year but recovery is still hard,1,recovery,test
+I am proud that I survived my suicidal crisis,1,recovery,test
+My self-harm urges are less frequent since I started treatment,1,recovery,train
+I am learning safer ways to cope instead of injuring myself,1,recovery,train
+I recently told my therapist about my past suicide attempt,1,recovery,train
+I am rebuilding my life after struggling with suicidal ideation,1,recovery,train
+I have been in recovery from self-harm since January,1,recovery,train
+I still get urges but I have not acted on them for months,1,recovery,validation
+I made a safety plan after my suicidal thoughts returned,1,recovery,train
+I am doing better now after years of harming myself,1,recovery,train
+I reached out for treatment and no longer want to die,1,recovery,train
+I am working through the reasons I used to self-harm,1,recovery,train
+My recovery began after I survived an attempt on my life,1,recovery,train
+I have stayed safe since leaving hospital after a suicidal episode,1,recovery,train
+I am healing from the time when I wanted to end my life,1,recovery,train
+I track my triggers because I am recovering from self-harm,1,recovery,validation
+I told my support group that my suicidal thoughts have reduced,1,recovery,train
+I am learning to ask for help when self-harm urges appear,1,recovery,train
+I have gone ninety days without deliberately hurting myself,1,recovery,train
+I still discuss my past suicide attempt in counselling,1,recovery,train
+I am safer now although I previously planned to die,1,recovery,train
+I am recovering well but occasional self-harm thoughts remain,1,recovery,validation
+I have never attempted suicide,1,negated_history,train
+I do not currently have thoughts of harming myself,1,negated_history,train
+I have never deliberately injured myself,1,negated_history,train
+I am not suicidal and I feel safe today,1,negated_history,test
+I did not act on the self-harm urge I had yesterday,1,negated_history,test
+I no longer want to end my life,1,negated_history,train
+I have not self-harmed since starting counselling,1,negated_history,train
+I am not planning to hurt myself tonight,1,negated_history,train
+I have never made a plan to take my own life,1,negated_history,train
+I am not having suicidal thoughts at the moment,1,negated_history,test
+I did not hurt myself even though the urge was strong,1,negated_history,train
+I have not attempted to harm myself this month,1,negated_history,train
+I am no longer thinking about suicide every day,1,negated_history,train
+I do not feel at risk of self-harm right now,1,negated_history,test
+I never acted on the suicidal thoughts I had,1,negated_history,train
+I have stopped injuring myself when I feel distressed,1,negated_history,train
+I am not going to take my own life,1,negated_history,validation
+I have not experienced self-harm urges for several weeks,1,negated_history,validation
+I did not attempt suicide during that crisis,1,negated_history,train
+I am safe now and have no intention of hurting myself,1,negated_history,train
+I have never needed treatment for self-harm,1,negated_history,validation
+I do not want to die even though I feel very low,1,negated_history,validation
+I am not considering suicide anymore,1,negated_history,train
+I have not returned to self-harm since my relapse,1,negated_history,train
+I did not make any attempt to end my life,1,negated_history,train
+I need help because I am thinking about suicide,1,help_seeking,train
+Can someone stay with me because I might hurt myself,1,help_seeking,train
+I want to tell my doctor about my self-harm urges,1,help_seeking,train
+Please help me stay safe from my suicidal thoughts,1,help_seeking,train
+I called a crisis line because I wanted to die,1,help_seeking,train
+I need to speak to someone before I harm myself,1,help_seeking,validation
+I am looking for therapy for my history of self-harm,1,help_seeking,test
+How do I tell my parents that I have suicidal thoughts,1,help_seeking,train
+I need support because the urge to cut myself is back,1,help_seeking,train
+I asked my roommate to remove anything I could use to hurt myself,1,help_seeking,train
+I want professional help for thoughts of ending my life,1,help_seeking,test
+I told my counsellor that I might not stay safe tonight,1,help_seeking,train
+Could you help me make a plan for my self-harm urges,1,help_seeking,train
+I am going to the hospital because I may harm myself,1,help_seeking,train
+I need advice on discussing my past suicide attempt with a therapist,1,help_seeking,test
+I reached out to a friend because I wanted to hurt myself,1,help_seeking,train
+I am asking for help before my suicidal thoughts get worse,1,help_seeking,train
+I want to find a support group for my self-harm recovery,1,help_seeking,train
+Please do not leave me alone while I am feeling suicidal,1,help_seeking,train
+I need urgent support because I am scared of harming myself,1,help_seeking,validation
+I booked a counselling appointment for my suicidal ideation,1,help_seeking,test
+I want help managing the impulse to injure myself,1,help_seeking,train
+I messaged my therapist after thinking about ending my life,1,help_seeking,train
+I need someone I trust to know about my self-harm,1,help_seeking,validation
+I am seeking treatment because I tried to take my life,1,help_seeking,validation
+My sister told me that she has been thinking about suicide,1,specific_person,train
+My roommate admitted that he hurt himself yesterday,1,specific_person,train
+My partner is recovering from a suicide attempt,1,specific_person,test
+My brother said that he does not want to live anymore,1,specific_person,validation
+My closest friend showed me injuries she caused herself,1,specific_person,test
+My cousin asked me for help with his self-harm urges,1,specific_person,train
+My daughter told me she has thoughts of ending her life,1,specific_person,train
+My son has a past history of deliberate self-harm,1,specific_person,train
+My classmate confided that she attempted suicide last year,1,specific_person,train
+My husband said his suicidal thoughts have returned,1,specific_person,validation
+My wife is in therapy after harming herself,1,specific_person,test
+My teammate told me he sometimes wishes he were dead,1,specific_person,validation
+My neighbour disclosed that she previously attempted suicide,1,specific_person,train
+My uncle has been hospitalized because he may harm himself,1,specific_person,train
+My aunt said she is struggling not to self-harm again,1,specific_person,train
+My colleague privately told me that he wants to die,1,specific_person,validation
+My best friend is six months into self-harm recovery,1,specific_person,train
+My younger sibling says they are afraid of their suicidal thoughts,1,specific_person,train
+My father told me about a suicide attempt from his youth,1,specific_person,train
+My mother admitted that she has recurring self-harm urges,1,specific_person,train
+My flatmate asked me to stay because she feels unsafe alone,1,specific_person,train
+My friend from college is receiving care for suicidal ideation,1,specific_person,train
+My partner says he has never attempted suicide,1,specific_person,train
+My sister no longer self-harms but still attends counselling,1,specific_person,train
+My brother called a helpline when he wanted to end his life,1,specific_person,test
+I have been giving away belongings because I do not expect to be here,1,indirect_disclosure,train
+I wrote farewell messages to people close to me,1,indirect_disclosure,test
+I keep thinking that my family would manage better without me,1,indirect_disclosure,test
+I feel like a burden and want everything to stop,1,indirect_disclosure,train
+I am unsure whether I can keep myself safe tonight,1,indirect_disclosure,train
+I removed myself from future plans because I may not be alive,1,indirect_disclosure,train
+I keep imagining my funeral when I cannot sleep,1,indirect_disclosure,train
+I have started saying goodbye as if I will not return,1,indirect_disclosure,validation
+I am exhausted from fighting thoughts about not being here,1,indirect_disclosure,train
+I cannot promise my therapist that I will stay safe,1,indirect_disclosure,train
+I feel frightened whenever I am alone with my own thoughts,1,indirect_disclosure,test
+I have been preparing people for the possibility that I disappear,1,indirect_disclosure,validation
+I do not believe I will make it to my next birthday,1,indirect_disclosure,train
+I keep wishing I could fall asleep and never wake up,1,indirect_disclosure,train
+I feel there is only one permanent escape from my pain,1,indirect_disclosure,validation
+I have started closing my accounts because I do not plan to stay,1,indirect_disclosure,train
+I told everyone they would be happier if I were gone,1,indirect_disclosure,test
+I have been arranging my affairs as though I am leaving forever,1,indirect_disclosure,train
+I cannot see myself surviving another week like this,1,indirect_disclosure,train
+I keep hoping something will happen so I do not have to live,1,indirect_disclosure,train
+I feel as though my life has reached its final page,1,indirect_disclosure,train
+I have stopped planning ahead because I expect to be gone,1,indirect_disclosure,train
+I am scared by how peaceful the idea of disappearing feels,1,indirect_disclosure,train
+I keep thinking there will soon be one less problem for my family,1,indirect_disclosure,train
+I have been acting as though I will not see anyone again,1,indirect_disclosure,validation
+Our psychology class covered the definition of suicidal ideation,0,education,test
+I am preparing a presentation about self-harm prevention,0,education,train
+The lecture explained common risk and protective factors,0,education,validation
+My essay compares different approaches to suicide prevention,0,education,train
+We discussed ethical reporting of suicide in journalism school,0,education,test
+This textbook chapter describes non-suicidal self-injury,0,education,test
+I need sources for a research paper on crisis intervention,0,education,train
+The exam includes a question about self-harm awareness,0,education,train
+Our teacher assigned a case analysis on suicide prevention,0,education,train
+I am studying how mental health services respond to crises,0,education,train
+The course explains how to recognize warning signs in general,0,education,train
+We are reviewing public health data about suicide rates,0,education,train
+My assignment is about reducing stigma around self-harm,0,education,train
+The seminar focused on safe language for discussing suicide,0,education,validation
+I am taking notes on theories of suicidal behaviour,0,education,train
+The training module describes how crisis helplines operate,0,education,train
+Our research methods class uses a self-harm survey as an example,0,education,train
+The professor explained the difference between ideation and attempts,0,education,validation
+I am creating flashcards for mental health first aid concepts,0,education,train
+The library has several books about suicide prevention policy,0,education,train
+We studied how clinicians assess self-harm risk,0,education,train
+My dissertation topic concerns digital tools for crisis support,0,education,train
+The workshop taught general principles for responding safely,0,education,validation
+I am summarizing an academic article on suicidal thoughts,0,education,train
+The syllabus includes a unit on self-injury research,0,education,test
+The newspaper reported a rise in funding for suicide prevention,0,news_policy,validation
+A new public health campaign will promote crisis resources,0,news_policy,test
+The council approved a mental health awareness programme,0,news_policy,train
+The report recommends expanding access to crisis services,0,news_policy,train
+Officials announced additional support for prevention charities,0,news_policy,train
+The article examines national trends in suicide statistics,0,news_policy,train
+Parliament debated funding for community mental health teams,0,news_policy,train
+The health department published updated prevention guidance,0,news_policy,train
+A local campaign is distributing information about helplines,0,news_policy,test
+The editorial argues for safer media coverage of suicide,0,news_policy,validation
+The annual report includes anonymized self-harm figures,0,news_policy,train
+The university introduced a campus crisis response policy,0,news_policy,train
+The documentary prompted a public discussion about prevention,0,news_policy,validation
+The charity opened a new support centre this week,0,news_policy,train
+The survey found broad support for better mental health services,0,news_policy,train
+The committee is reviewing standards for online safety tools,0,news_policy,train
+The news programme discussed barriers to accessing counselling,0,news_policy,train
+The city launched training for volunteer crisis responders,0,news_policy,train
+The policy document calls for responsible content moderation,0,news_policy,validation
+The conference announced a grant for self-harm research,0,news_policy,train
+The agency released guidance for schools on crisis prevention,0,news_policy,train
+The article compares suicide prevention strategies across countries,0,news_policy,test
+The budget provides more resources for youth counselling,0,news_policy,train
+The public service announcement lists general warning signs,0,news_policy,train
+The health ministry is evaluating its national prevention plan,0,news_policy,test
+The novel follows a fictional character facing suicidal thoughts,0,fiction_media,train
+In the film a character says that he wants to disappear forever,0,fiction_media,test
+The actor portrays someone recovering from self-harm,0,fiction_media,validation
+This episode includes a fictional suicide prevention storyline,0,fiction_media,test
+The poem uses death as a symbol for social change,0,fiction_media,train
+I am reviewing a movie that discusses self-injury,0,fiction_media,train
+The game contains a warning about fictional self-harm content,0,fiction_media,test
+The narrator in the short story considers ending her life,0,fiction_media,train
+The play explores a made-up family's response to a crisis,0,fiction_media,train
+A character in my screenplay calls a fictional helpline,0,fiction_media,train
+The book handles its suicide-related plot with sensitivity,0,fiction_media,test
+I am analysing a monologue about wanting to die,0,fiction_media,train
+The series shows an imaginary patient attending counselling,0,fiction_media,train
+The song title refers to self-harm but the review is neutral,0,fiction_media,train
+The comic has a fictional hero who survives a suicide attempt,0,fiction_media,train
+I am editing a story about a character's recovery,0,fiction_media,train
+The trailer displays a content warning for suicidal themes,0,fiction_media,train
+The fictional diary entry describes an urge to self-harm,0,fiction_media,train
+The director discussed how the film approached suicide prevention,0,fiction_media,validation
+My literature essay examines death imagery in the novel,0,fiction_media,train
+The podcast drama features a fictional crisis counsellor,0,fiction_media,train
+The chapter ends when the invented protagonist asks for help,0,fiction_media,validation
+The museum exhibit includes fictional letters about despair,0,fiction_media,train
+I am drawing a storyboard for a prevention campaign scene,0,fiction_media,train
+The television review mentions a character's past self-harm,0,fiction_media,validation
+An anonymous survey participant reported suicidal thoughts,0,anonymous_general,train
+Several respondents described a history of self-harm,0,anonymous_general,train
+The case study states that the unnamed patient sought crisis care,0,anonymous_general,train
+One de-identified record mentions a previous suicide attempt,0,anonymous_general,validation
+The aggregated data includes reports of self-injury,0,anonymous_general,train
+A hypothetical patient may present with suicidal ideation,0,anonymous_general,train
+The sample response says that an unnamed person feels unsafe,0,anonymous_general,train
+Participant A reported an urge to harm themselves,0,anonymous_general,train
+The anonymized interview describes recovery from self-harm,0,anonymous_general,validation
+A fictional clinical example mentions thoughts of death,0,anonymous_general,validation
+The dataset contains de-identified crisis messages,0,anonymous_general,test
+Some anonymous callers discussed wanting to die,0,anonymous_general,train
+The report groups self-harm disclosures without identifying anyone,0,anonymous_general,train
+A generic example shows how a person might ask for support,0,anonymous_general,train
+The unnamed subject denied having suicidal thoughts,0,anonymous_general,train
+One anonymized account describes a self-harm relapse,0,anonymous_general,train
+The research summary refers to participants who sought help,0,anonymous_general,train
+A simulated patient says they previously injured themselves,0,anonymous_general,test
+The training scenario involves an unidentified person in crisis,0,anonymous_general,train
+The paper quotes a de-identified disclosure of suicidal intent,0,anonymous_general,train
+A sample chat message contains a general self-harm statement,0,anonymous_general,train
+The anonymized transcript includes a request for crisis support,0,anonymous_general,test
+Several unnamed patients reported feeling safer after treatment,0,anonymous_general,train
+The example form records no current risk of self-harm,0,anonymous_general,validation
+A composite case describes someone recovering after an attempt,0,anonymous_general,test
+This homework is killing me but I will finish it,0,idiom_metaphor,test
+I could die of embarrassment after that presentation,0,idiom_metaphor,validation
+My phone battery is completely dead,0,idiom_metaphor,train
+That comedian's joke nearly killed me with laughter,0,idiom_metaphor,test
+I am dying to see the new movie,0,idiom_metaphor,test
+The suspense in this match is torture,0,idiom_metaphor,train
+I want to disappear under my desk after that typo,0,idiom_metaphor,validation
+This long meeting is the death of my afternoon,0,idiom_metaphor,train
+I could murder a cup of coffee right now,0,idiom_metaphor,train
+The deadline is brutal but the project is nearly done,0,idiom_metaphor,train
+My legs are dead after football practice,0,idiom_metaphor,train
+That exam destroyed me but I probably passed,0,idiom_metaphor,validation
+I am sick to death of these pop-up advertisements,0,idiom_metaphor,train
+The crowd went wild when the singer killed the performance,0,idiom_metaphor,train
+I died inside when I waved at the wrong person,0,idiom_metaphor,train
+Waiting for the results is painfully slow,0,idiom_metaphor,train
+The old laptop finally gave up the ghost,0,idiom_metaphor,train
+I am drowning in emails this morning,0,idiom_metaphor,train
+The spicy noodles set my mouth on fire,0,idiom_metaphor,test
+This puzzle is making my brain explode,0,idiom_metaphor,train
+I want this noisy construction to stop forever,0,idiom_metaphor,train
+The final hill on the run was absolute murder,0,idiom_metaphor,train
+Our team was crushed in the championship game,0,idiom_metaphor,validation
+I am buried under a mountain of assignments,0,idiom_metaphor,train
+The plant is dying because nobody watered it,0,idiom_metaphor,train
+I accidentally cut my finger while slicing vegetables,0,accidental_context,train
+The nurse cleaned the scrape from my bicycle fall,0,accidental_context,train
+I burned my hand while taking a tray from the oven,0,accidental_context,test
+The paper edge left a small cut on my thumb,0,accidental_context,train
+I bruised my knee when I bumped into the table,0,accidental_context,validation
+My cat scratched my arm while we were playing,0,accidental_context,train
+I took my prescribed medicine at the usual time,0,accidental_context,train
+The surgeon made a small incision during the procedure,0,accidental_context,train
+I cut the cardboard into pieces for the model,0,accidental_context,train
+The barber nicked my skin by accident,0,accidental_context,train
+I slipped on the stairs and hurt my shoulder,0,accidental_context,train
+The chef burned the toast and started again,0,accidental_context,train
+I pricked my finger while sewing a button,0,accidental_context,test
+The branch scratched my leg during the hike,0,accidental_context,test
+I removed the damaged section with a craft knife,0,accidental_context,train
+The doctor prescribed pain relief for my ankle injury,0,accidental_context,validation
+I got a blister from wearing new shoes,0,accidental_context,test
+The broken cup caused an accidental cut,0,accidental_context,train
+I strained my wrist while lifting a heavy box,0,accidental_context,train
+The puppy bit my sleeve without breaking the skin,0,accidental_context,train
+I used scissors to cut the ribbon,0,accidental_context,validation
+The mechanic injured his hand while fixing the engine,0,accidental_context,train
+I bumped my head on the open cupboard door,0,accidental_context,validation
+The athlete received treatment for a sports injury,0,accidental_context,train
+I have a small scratch from gardening,0,accidental_context,train
+I feel stressed about tomorrow's examination,0,unrelated_distress,validation
+I am sad because my holiday was cancelled,0,unrelated_distress,train
+I cried after losing an important match,0,unrelated_distress,test
+I feel overwhelmed by the number of assignments,0,unrelated_distress,train
+I am disappointed with my interview performance,0,unrelated_distress,train
+I have been lonely since moving to a new city,0,unrelated_distress,test
+I am anxious about speaking in front of the class,0,unrelated_distress,train
+Work has been exhausting this month,0,unrelated_distress,train
+I am upset after arguing with my best friend,0,unrelated_distress,train
+I feel low today but plan to rest and try again,0,unrelated_distress,test
+I am frustrated that my code still has a bug,0,unrelated_distress,test
+I miss my family while studying away from home,0,unrelated_distress,train
+I feel nervous while waiting for the test results,0,unrelated_distress,train
+I am angry that the train was cancelled,0,unrelated_distress,train
+I need a break after a difficult week,0,unrelated_distress,train
+I am worried about meeting the project deadline,0,unrelated_distress,train
+I felt embarrassed when I forgot my lines,0,unrelated_distress,train
+I am tired and finding it hard to concentrate,0,unrelated_distress,train
+I was hurt by a rude comment from my teammate,0,unrelated_distress,train
+I feel uncertain about which course to choose,0,unrelated_distress,validation
+I am homesick but video calls are helping,0,unrelated_distress,train
+I am annoyed with myself for missing the bus,0,unrelated_distress,validation
+I feel pressured to improve my grades,0,unrelated_distress,validation
+I had a rough day and want some quiet time,0,unrelated_distress,train
+I am worried about the cost of repairing my laptop,0,unrelated_distress,train
+Crisis helplines can provide confidential support,0,prevention_support,train
+People in immediate danger should contact local emergency services,0,prevention_support,train
+Listening without judgment can help a person in distress,0,prevention_support,train
+A safety plan may include trusted contacts and coping steps,0,prevention_support,train
+Mental health treatment can support people through a crisis,0,prevention_support,validation
+It is important to take statements about suicide seriously,0,prevention_support,train
+Schools should share reliable crisis resources with students,0,prevention_support,train
+Supportive conversations can reduce isolation,0,prevention_support,train
+Professional help is available for self-harm concerns,0,prevention_support,train
+Communities benefit from accessible mental health services,0,prevention_support,test
+Responsible reporting avoids sensational details about suicide,0,prevention_support,train
+Prevention campaigns should use clear and compassionate language,0,prevention_support,train
+A trusted adult can help someone reach appropriate support,0,prevention_support,test
+Regular training helps staff respond to crisis disclosures,0,prevention_support,test
+Online platforms can display links to verified support services,0,prevention_support,train
+Recovery from self-harm can involve medical and emotional care,0,prevention_support,test
+Asking directly about safety can open a supportive conversation,0,prevention_support,train
+Privacy should be protected when handling mental health information,0,prevention_support,train
+General warning signs are not a substitute for professional assessment,0,prevention_support,train
+Early support can make mental health care easier to access,0,prevention_support,train
+Family members can learn how to respond calmly in a crisis,0,prevention_support,validation
+Public resources should be reviewed for accuracy and safety,0,prevention_support,train
+Peer supporters need training and clear referral pathways,0,prevention_support,train
+Self-harm awareness should avoid blame and stigma,0,prevention_support,validation
+Emergency guidance should match the person's local services,0,prevention_support,validation
