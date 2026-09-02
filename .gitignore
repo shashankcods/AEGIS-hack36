@@ -20,6 +20,7 @@ venv/
 env/
 ENV/
 .venv/
+.venv-ml/
 .python-version
 */venv/
 */env/
@@ -69,6 +70,10 @@ logs/
 uploads/
 cache/
 checkpoints/
+backend/ml_service/notebooks/disease_training_output/
+backend/ml_service/notebooks/disease_model_v2/
+backend/ml_service/notebooks/self_harm_training_output/
+backend/ml_service/notebooks/self_harm_model_v2/
 
 # --- Pathway Engine ---
 pathway_engine/__pycache__/
