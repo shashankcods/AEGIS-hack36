@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^$n03lk+xk0e9v45=l525#*+*_(7mch@sdb3)e8h^z!!qmk&-6'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-aegis-local-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,[::1]'
+).split(',') if host.strip()]
+
+AEGIS_MAX_INPUT_BYTES = 8 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = AEGIS_MAX_INPUT_BYTES
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FILES = 10
 
 
 # Application definition
@@ -122,7 +130,5 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Redis config for Pathway and analytics
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_DB = 0
+# API and workers use the same environment-configured Redis connection.
+AEGIS_REDIS_URL = os.environ.get('AEGIS_REDIS_URL', 'redis://127.0.0.1:6379/0')
