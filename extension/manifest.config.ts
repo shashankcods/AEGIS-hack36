@@ -3,7 +3,7 @@ import pkg from './package.json';
 
 const manifest: any = {
   manifest_version: 3,
-  name: (pkg as any).name ?? 'AEGIS',
+  name: 'AEGIS',
   version: (pkg as any).version ?? '0.0.0',
   description: (pkg as any).description ?? 'AEGIS extension (CRXJS build)',
 
@@ -33,28 +33,24 @@ const manifest: any = {
 
   content_scripts: [
     {
-      matches: ['<all_urls>'],
+      matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*', 'https://gemini.google.com/*'],
       js: ['src/content/content_script.ts'],
       run_at: 'document_idle'
     }
   ],
 
   permissions: [
-    'storage',
-    'scripting',
-    'activeTab',
-    'tabs'
+    'storage'
   ],
 
   host_permissions: [
-    'http://127.0.0.1/*',
-    'https://your-backend.example/*'
+    'http://127.0.0.1/*'
   ],
 
   web_accessible_resources: [
     {
       resources: ['icons/*', 'assets/*'],
-      matches: ['<all_urls>']
+      matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*', 'https://gemini.google.com/*']
     }
   ]
 };

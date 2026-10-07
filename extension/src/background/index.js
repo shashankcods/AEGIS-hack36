@@ -1,291 +1,155 @@
-// src/background/index.js
-// MV3-safe background service worker — defensive startup and clear logs.
+import { buildFormFromPayload, requestBackend, safeResultSummary } from './api.js';
 
-const DEBUG = true;
-const API_BASE = 'http://127.0.0.1:8000';
-const ANALYZE_PATH = '/api/analyze/';
-const API_URL = API_BASE + ANALYZE_PATH;
 const TOKEN_KEY = 'aegis_api_token';
-const MAX_RETRY = 3;
-const MAX_LOGS_PER_TAB = 500;
-
-// in-memory logs map (tabId -> array)
 const logsByTab = new Map();
+const jobsByTab = new Map();
+const SUPPORTED_HOSTS = new Set(['chatgpt.com', 'chat.openai.com', 'gemini.google.com']);
 
-let latestDetections = [];
-
-function d(...args) { if (DEBUG) console.log('[Aegis background]', ...args); }
-
-/* ---------- Basic safety handlers ---------- */
-self.addEventListener('install', (ev) => {
-  d('service worker installing - calling skipWaiting');
-  try { self.skipWaiting(); } catch (e) { d('skipWaiting err', e); }
-});
-self.addEventListener('activate', (ev) => {
-  d('service worker activating - claiming clients');
-  try { self.clients && self.clients.claim && self.clients.claim(); } catch (e) { d('clients.claim err', e); }
-});
-self.addEventListener('error', (ev) => d('unhandled error in SW', ev && ev.message ? ev.message : ev));
-self.addEventListener('unhandledrejection', (ev) => d('unhandledrejection in SW', ev && ev.reason ? ev.reason : ev));
-
-/* ---------- Tiny chrome.storage promise wrappers ---------- */
 function storageGet(keys) {
-  return new Promise((resolve) => {
-    try {
-      chrome.storage.local.get(keys, (res) => resolve(res || {}));
-    } catch (e) {
-      d('storageGet wrapper error', e);
-      resolve({});
-    }
-  });
-}
-function storageSet(obj) {
-  return new Promise((resolve) => {
-    try {
-      chrome.storage.local.set(obj, () => resolve());
-    } catch (e) {
-      d('storageSet wrapper error', e);
-      resolve();
-    }
-  });
+  return new Promise(resolve => chrome.storage.local.get(keys, items => resolve(items || {})));
 }
 
-/* ---------- Token helper ---------- */
 async function readToken() {
-  try {
-    const items = await storageGet([TOKEN_KEY]);
-    return items?.[TOKEN_KEY] || null;
-  } catch (e) {
-    d('readToken err', e);
-    return null;
-  }
+  return (await storageGet([TOKEN_KEY]))[TOKEN_KEY] || null;
 }
 
-/* ---------- Log helpers ---------- */
-function ensureLogsFor(tabId) {
-  if (!logsByTab.has(tabId)) logsByTab.set(tabId, []);
-  return logsByTab.get(tabId);
+// Older versions persisted prompt previews. Current logs contain counts and labels only.
+async function clearLegacyLogs() {
+  const stored = await storageGet(null);
+  const keys = Object.keys(stored).filter(key => key.startsWith('aegis_logs_tab_'));
+  if (keys.length) chrome.storage.local.remove(keys);
 }
-async function persistLogForTab(tabId) {
-  try {
-    const arr = logsByTab.get(tabId) || [];
-    const key = `aegis_logs_tab_${tabId}`;
-    await storageSet({ [key]: arr.slice(0, MAX_LOGS_PER_TAB) });
-  } catch (e) {
-    d('persistLogForTab error', e);
-  }
+clearLegacyLogs().catch(() => {});
+
+function broadcast(message) {
+  chrome.runtime.sendMessage(message, () => { void chrome.runtime.lastError; });
 }
-function safeBroadcast(msg) {
+
+function sendToTab(tabId, message) {
+  if (typeof tabId !== 'number') return;
+  chrome.tabs.sendMessage(tabId, message, () => { void chrome.runtime.lastError; });
+}
+
+function record(tabId, entry) {
+  const logs = logsByTab.get(tabId) || [];
+  logs.unshift(entry);
+  logsByTab.set(tabId, logs.slice(0, 100));
+  broadcast({ type: 'NEW_CAPTURE', tabId, entry });
+}
+
+function isSupportedSender(sender) {
+  try { return SUPPORTED_HOSTS.has(new URL(sender.tab?.url || sender.url || '').hostname); }
+  catch { return false; }
+}
+
+async function processJob(tabId, state, job) {
+  state.running = true;
+  const { payload, requestId, respond } = job;
   try {
-    chrome.runtime.sendMessage(msg, () => {
-      if (chrome.runtime.lastError) {
-        // ignore receiving end missing (normal) but log other errors
-        if (!chrome.runtime.lastError.message.includes('Receiving end does not exist')) {
-          d('broadcast err:', chrome.runtime.lastError && chrome.runtime.lastError.message);
-        }
-      } else {
-        if (DEBUG) d('broadcasted', msg && msg.type);
-      }
+    const token = await readToken();
+    const result = await requestBackend('/api/analyze/', {
+      method: 'POST', body: buildFormFromPayload(payload),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-  } catch (e) {
-    d('safeBroadcast threw', e);
+    if (!result || !Array.isArray(result.detections)) throw new Error('The backend returned an invalid analysis response.');
+    if (state.latestId !== requestId) {
+      respond({ ok: false, superseded: true, requestId });
+    } else {
+      record(tabId, {
+        ts: Date.now(), type: 'UPLOAD_RESULT', ok: true,
+        textLen: (payload.text || '').length, fileCount: (payload.files || []).length,
+        result: safeResultSummary(result),
+      });
+      sendToTab(tabId, { type: 'UPLOAD_RESULT', result, requestId });
+      broadcast({ type: 'UPLOAD_RESULT', tabId, requestId });
+      respond({ ok: true, result, requestId });
+    }
+  } catch (error) {
+    if (state.latestId !== requestId) {
+      respond({ ok: false, superseded: true, requestId });
+    } else {
+      const message = error instanceof Error ? error.message : 'The privacy check failed.';
+      record(tabId, { ts: Date.now(), type: 'UPLOAD_RESULT', ok: false, error: message });
+      sendToTab(tabId, { type: 'UPLOAD_RESULT', error: message, requestId });
+      respond({ ok: false, error: message, requestId });
+    }
+  } finally {
+    state.running = false;
+    if (state.pending) {
+      const next = state.pending;
+      state.pending = null;
+      void processJob(tabId, state, next);
+    }
   }
 }
-function pushLogForTab(tabId, entry) {
-  const arr = ensureLogsFor(tabId);
-  arr.unshift(entry);
-  while (arr.length > MAX_LOGS_PER_TAB) arr.pop();
-  persistLogForTab(tabId);
-  d('pushLogForTab', tabId, entry.type || 'log', 'count:', arr.length);
-  safeBroadcast({ type: 'NEW_CAPTURE', entry, tabId });
-}
-async function clearLogsFor(tabId) {
-  if (typeof tabId === 'undefined' || tabId === null) {
-    logsByTab.clear();
-    try {
-      const all = await storageGet(null);
-      const keys = Object.keys(all).filter(k => k.startsWith('aegis_logs_tab_'));
-      for (const k of keys) await storageSet({ [k]: [] });
-    } catch (e) {
-      d('clearLogsFor err', e);
-    }
+
+function enqueue(tabId, job) {
+  const state = jobsByTab.get(tabId) || { running: false, pending: null, latestId: null };
+  state.latestId = job.requestId;
+  jobsByTab.set(tabId, state);
+  if (state.running) {
+    if (state.pending) state.pending.respond({ ok: false, superseded: true, requestId: state.pending.requestId });
+    state.pending = job;
   } else {
-    logsByTab.set(tabId, []);
-    const key = `aegis_logs_tab_${tabId}`;
-    try { await storageSet({ [key]: [] }); } catch (e) { d('clearLogsFor persist err', e); }
+    void processJob(tabId, state, job);
   }
 }
 
-/* ---------- Upload helper with retry ---------- */
-async function uploadToBackend({ form, token }) {
-  let lastErr = null;
-  for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
-    try {
-      const headers = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(API_URL, { method: 'POST', body: form, headers, credentials: 'omit' });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '<no body>');
-        throw new Error(`HTTP ${res.status}: ${text}`);
-      }
-      const json = await res.json().catch(() => null);
-      return json;
-    } catch (err) {
-      lastErr = err;
-      d('upload attempt', attempt + 1, 'failed:', err && err.message);
-      if (attempt < MAX_RETRY - 1) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
-    }
+chrome.runtime.onMessage.addListener((message, sender, respond) => {
+  if (message?.type === 'PING') { respond({ ok: true }); return false; }
+  if (message?.type === 'GET_LOGS') {
+    respond({ ok: true, logs: logsByTab.get(message.tabId ?? sender.tab?.id) || [] });
+    return false;
   }
-  throw lastErr || new Error('upload failed');
-}
-
-/* ---------- Convert incoming payload.files to FormData ---------- */
-function buildFormFromPayload(payload) {
-  const form = new FormData();
-  if (payload.text) form.append('text', payload.text);
-  if (Array.isArray(payload.files)) {
-    for (const f of payload.files) {
-      if (f.buffer && Array.isArray(f.buffer)) {
-        const uint8 = new Uint8Array(f.buffer);
-        const blob = new Blob([uint8], { type: f.type || 'application/octet-stream' });
-        form.append('image', blob, f.name || 'upload.bin');
-      } else if (f.base64) {
-        try {
-          const binary = atob(f.base64);
-          const len = binary.length;
-          const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-          const b = new Blob([bytes], { type: f.type || 'application/octet-stream' });
-          form.append('image', b, f.name || 'attachment');
-        } catch (e) {
-          d('base64->blob conversion failed', e);
-          form.append('meta', JSON.stringify({ name: f.name, size: f.size, type: f.type }));
-        }
-      } else {
-        form.append('meta', JSON.stringify({ name: f.name, size: f.size, type: f.type }));
-      }
-    }
+  if (message?.type === 'SESSION_START' || message?.type === 'SESSION_END') {
+    logsByTab.delete(sender.tab?.id);
+    respond({ ok: true });
+    return false;
   }
-  return form;
-}
-
-/* ---------- Respond to messages (guarded) ---------- */
-try {
-  // Register top-level message listener early so PING works even if later logic throws
-  chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
-    try {
-      if (!msg || !msg.type) {
-        try { sendResp({ ok: false, error: 'no-type' }); } catch(e) {}
-        return false;
-      }
-      if (msg.type === 'PING') {
-        try { sendResp({ ok: true, msg: 'pong from background' }); } catch(e) {}
-        return false;
-      }
-
-      if (msg.type === 'GET_LOGS') {
-        const tabId = (typeof msg.tabId !== 'undefined') ? msg.tabId : ((sender && sender.tab && sender.tab.id) ? sender.tab.id : 'global');
-        (async () => {
-          try {
-            let arr = logsByTab.get(tabId);
-            if (!arr) {
-              const key = `aegis_logs_tab_${tabId}`;
-              const raw = await storageGet([key]);
-              arr = raw[key] || [];
-              logsByTab.set(tabId, arr);
-            }
-            try { sendResp({ ok: true, logs: arr }); } catch(e) {}
-          } catch (e) { d('GET_LOGS err', e); try { sendResp({ ok: false, error: String(e)}); } catch{} }
-        })();
-        return true;
-      }
-
-      if (msg.type === 'SESSION_START') {
-        const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (msg.tabId ?? 'unknown');
-        clearLogsFor(tabId);
-        try { sendResp({ ok: true }); } catch (e) {}
-        return false;
-      }
-      if (msg.type === 'SESSION_END') {
-        const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (msg.tabId ?? 'unknown');
-        clearLogsFor(tabId);
-        safeBroadcast({ type: 'SESSION_CLEARED', tabId });
-        try { sendResp({ ok: true }); } catch (e) {}
-        return false;
-      }
-
-      if (msg.type === 'UPLOAD_CANDIDATE') {
-        const tabId = (sender && sender.tab && sender.tab.id) || msg.tabId || 'global';
-        (async () => {
-          const ts = Date.now();
-          const payload = msg.payload || {};
-          try {
-            const entryMeta = {
-              textPreview: (payload.text || '').slice(0, 400),
-              textLen: (payload.text || '').length,
-              filesMeta: (payload.files || []).map(f => ({ name: f.name, size: f.size, type: f.type, hasBuffer: !!(f.buffer || f.base64) })),
-              ts,
-              source: msg.source || 'content',
-            };
-            pushLogForTab(tabId, Object.assign({}, entryMeta, { type: 'UPLOAD_START' }));
-
-            const form = buildFormFromPayload(payload);
-            const token = await readToken();
-            let result;
-            try {
-              result = await uploadToBackend({ form, token });
-            } catch (err) {
-              const eEntry = { ts: Date.now(), type: 'UPLOAD_RESULT', ok: false, error: String(err) };
-              pushLogForTab(tabId, eEntry);
-              safeBroadcast({ type: 'UPLOAD_RESULT', tabId, error: String(err) });
-              try { sendResp({ ok: false, error: String(err) }); } catch (e) {}
-              return;
-            }
-
-            const okEntry = { ts: Date.now(), type: 'UPLOAD_RESULT', ok: true, result };
-            pushLogForTab(tabId, okEntry);
-
-            // ✅ Pretty-print the backend JSON result directly in the service worker console
-            d(`🧠 AEGIS Backend Response for tab ${tabId}:`);
-            try {
-              d(JSON.stringify(result, null, 2));  // Indented for readability
-            } catch (err) {
-              d('Failed to stringify result', err);
-            }
-
-            // Send the result to the content script as usual
-            safeBroadcast({ type: 'UPLOAD_RESULT', tabId, result });
-            try {
-              if (tabId && tabId !== 'global') {
-                chrome.tabs.sendMessage(tabId, { type: 'UPLOAD_RESULT', result });
-                d('UPLOAD_RESULT sent to tab', tabId);
-              }
-            } catch (e) {
-              d('sendMessage failed', e);
-            }
-            try { sendResp({ ok: true, result }); } catch (e) {}
-          } catch (err) {
-            const entry = { ts: Date.now(), type: 'UPLOAD_RESULT', ok: false, error: String(err) };
-            pushLogForTab(tabId, entry);
-            safeBroadcast({ type: 'UPLOAD_RESULT', tabId, error: String(err) });
-            try { sendResp({ ok: false, error: String(err) }); } catch (e) {}
-          }
-        })();
-        return true;
-      }
-
-      // fallback
-      try { sendResp({ ok: true, echo: msg }); } catch (e) {}
-      return false;
-    } catch (e) {
-      d('onMessage outer handler error', e);
-      try { sendResp({ ok: false, error: String(e) }); } catch (ee) {}
+  if (message?.type === 'GET_STATS') {
+    (async () => {
+      const token = await readToken();
+      const options = { headers: token ? { Authorization: `Bearer ${token}` } : {} };
+      const [stats, health] = await Promise.allSettled([
+        requestBackend('/api/stats/', options, { timeoutMs: 15000, maxAttempts: 1 }),
+        requestBackend('/api/health/', options, { timeoutMs: 15000, maxAttempts: 1 }),
+      ]);
+      respond({
+        ok: stats.status === 'fulfilled',
+        data: stats.status === 'fulfilled' ? stats.value : null,
+        error: stats.status === 'rejected' ? stats.reason.message : null,
+        health: health.status === 'fulfilled' ? health.value : null,
+        healthError: health.status === 'rejected' ? health.reason.message : null,
+      });
+    })().catch(() => respond({ ok: false, error: 'Cannot connect to the local backend.' }));
+    return true;
+  }
+  if (message?.type === 'UPLOAD_CANDIDATE') {
+    if (!isSupportedSender(sender)) {
+      respond({ ok: false, error: 'AEGIS only analyzes prompts on ChatGPT and Gemini.' });
       return false;
     }
-  });
+    const payload = message.payload || {};
+    if (!(payload.text || '').trim() && !payload.files?.length) {
+      respond({ ok: false, error: 'Enter text or attach a supported image or PDF first.' });
+      return false;
+    }
+    enqueue(sender.tab.id, {
+      payload, requestId: message.requestId || crypto.randomUUID(), respond,
+    });
+    return true;
+  }
+  respond({ ok: false, error: 'Unknown extension message.' });
+  return false;
+});
 
-  d('Background service worker active (guarded)');
-} catch (e) {
-  d('Fatal error registering onMessage', e);
-  // Leave the worker alive but log; we don't rethrow so registration attempt doesn't kill the SW
-}
+chrome.tabs.onRemoved.addListener(tabId => {
+  logsByTab.delete(tabId);
+  const state = jobsByTab.get(tabId);
+  if (state) {
+    state.latestId = null;
+    state.pending?.respond({ ok: false, superseded: true });
+    state.pending = null;
+  }
+  jobsByTab.delete(tabId);
+});
