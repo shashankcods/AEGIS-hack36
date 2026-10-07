@@ -11,7 +11,7 @@ numpy==1.26.4
 
 # --- OCR and Image Processing ---
 paddleocr==2.9.1
-paddlepaddle>=2.6.0
+paddlepaddle>=2.6.0,<4
 Pillow==10.3.0
 pdf2image==1.17.0
 python-magic==0.4.27
@@ -19,6 +19,10 @@ python-magic==0.4.27
 # --- Utilities ---
 requests==2.31.0
 python-dotenv==1.0.1
+redis>=5.0,<8
+
+# Pathway is optional; the portable analytics worker has no extra dependency.
+# Install requirements-pathway.txt with Python 3.10+ to run the Pathway adapter.
 
 # --- Notes ---
 # To use pdf2image, make sure 'poppler-utils' is installed on your system:

@@ -1,13 +1,14 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+"""Compatibility helper using the same V2 health model as the application."""
 
-MODEL_PATH = "backend/ml_service/models/disease_model"
+from ml_service.pii_detection import analyze_input
 
-print("Loading Disease Detection model...")
-disease_detector = pipeline("text-classification", model=MODEL_PATH, tokenizer=MODEL_PATH)
 
-def detect_disease(text: str):
-    """Run disease detection on input text."""
-    result = disease_detector(text)[0]
-    label = "Disease Detected" if result["label"] == "LABEL_1" else "No Disease"
-    score = round(result["score"], 3)
-    return {"text": text, "label": label, "score": score}
+def detect_disease(text):
+    result = analyze_input(text)
+    detection = next((item for item in result["detections"]
+                      if item["label"] == "health_disclosure"), None)
+    return {
+        "label": "HEALTH_DISCLOSURE" if detection else "NO_HEALTH_DISCLOSURE",
+        "confidence": detection["confidence"] if detection else None,
+        "warnings": result["warnings"],
+    }

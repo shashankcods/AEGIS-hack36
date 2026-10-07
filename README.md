@@ -1,6 +1,6 @@
 <h1 align="center">AEGIS — Secure Prompting Practices</h1>
 <p align="center">
-A privacy-first browser extension designed to monitor, analyze, and securely process text and file inputs in real time — ensuring privacy-preserving AI interactions.
+A browser extension that warns about sensitive information in prompts and attachments before users share them with ChatGPT or Gemini.
 </p>
 
 [![Built at Hack36](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)
@@ -8,10 +8,27 @@ A privacy-first browser extension designed to monitor, analyze, and securely pro
 ---
 
 ## Introduction:
-**AEGIS** is a privacy-aware browser extension that captures, analyzes, and securely transmits text and file inputs from web environments for intelligent sensitivity detection.  
-It integrates with a **Django + Pathway + Redis** backend to perform **real-time content analysis**, identifying personally identifiable information (PII), evaluating sensitivity scores, and maintaining privacy-first data handling.  
+**AEGIS** sends supported prompts and attachments to a locally hosted Django backend. GLiNER detects PII categories, while two locally fine-tuned DistilRoBERTa classifiers detect health and self-harm disclosures. Images and PDFs are processed with PaddleOCR.
+
+Redis connects the API to result processing and sensitivity analytics. The default analytics worker works in the existing Python environment; an optional Pathway adapter is also available. Results contain categories and scores, not the detected personal values. This is a warning prototype, not a submission blocker or clinical system.
 
 The system operates as a **CRXJS + React + TypeScript** extension, observing user input in browser environments and providing detailed visual insights through a clean popup UI.
+
+## Run locally
+
+With the backend dependencies and the exported V2 model directories present:
+
+```bash
+python3 scripts/run_local.py
+```
+
+This starts Redis if needed, the result consumer, analytics, and Django on
+`http://127.0.0.1:8000`, then loads the models and OCR. Build the extension with
+`npm install` and `npm run build` in `extension`, and load `extension/dist` using
+Chrome's **Load unpacked** button. Reload any open ChatGPT/Gemini tabs.
+
+See [local setup and verification](docs/RUNNING.md) for first-time installation,
+model paths, worker options, tests, and known limitations.
 
 ---
 
@@ -43,9 +60,9 @@ The system operates as a **CRXJS + React + TypeScript** extension, observing use
 ---
 
 ### 2. Privacy-First Architecture  
-- All data capture and preprocessing occur locally within the browser sandbox.  
-- Only sanitized and encoded metadata is transmitted.  
-- Fully adheres to **privacy-by-design** principles.
+- Raw text and supported attachments are sent to the local backend for inference. Encoding is not anonymization or encryption.
+- API results and Redis jobs contain category labels and scores, not raw prompts or personal values.
+- The extension does not persist or print prompt previews. Keep the development API bound to localhost.
 
 ---
 
@@ -60,18 +77,16 @@ The system operates as a **CRXJS + React + TypeScript** extension, observing use
 
 ### 4. Pathway + Django + Redis Integration  
 - Background service worker sends structured capture data to the backend.  
-- **Pathway pipeline:** performs live sensitivity scoring and event aggregation.  
-- **Django backend:** handles data storage, REST APIs, and visualization endpoints.  
+- **Analytics worker:** aggregates category sensitivity events; Pathway is an optional alternative runtime.
+- **Django backend:** handles inference, input validation, REST APIs, and readiness/statistics endpoints.
 - **Redis bridge:** connects Django and Pathway for real-time, low-latency data exchange.
 
 ---
 
-### 5. Robust Data Logging  
-- Each capture event includes:
-  - Source (manual, automatic, paste, upload)
-  - Associated metadata  
-- Ensures reliable communication between:
-  - **Content Script → Background Script → Backend**
+### 5. Explicit Failure Handling
+- Missing classifiers, unreadable files, and partial PII checks are reported instead of being presented as an empty successful result.
+- Immediate detections remain available if Redis is offline; analytics and background summaries show separate availability.
+- Per-tab requests suppress stale responses while prompts change.
 
 ---
 
@@ -98,4 +113,3 @@ The system operates as a **CRXJS + React + TypeScript** extension, observing use
 
 ## Made at:
 [![Built at Hack36](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)](https://raw.githubusercontent.com/nihal2908/Hack-36-Readme-Template/main/BUILT-AT-Hack36-9-Secure.png)
-

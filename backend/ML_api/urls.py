@@ -6,6 +6,7 @@ urlpatterns = [
     # --- Core ML APIs ---
     path("analyze/", views.analyze_endpoint, name="analyze"),
     path("get_results/", views.get_results, name="get_results"),
+    path("health/", views.health_endpoint, name="health"),
 
     # --- Pathway + Redis Analytics APIs ---
     path("score/", views.submit_score, name="submit_score"),

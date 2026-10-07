@@ -1,414 +1,329 @@
-// src/content/content_script.ts
-// -----------------------------------------------------------
-// AEGIS — Content Script (Debounced Edition)
-// -----------------------------------------------------------
-// - Prevents multiple uploads per keystroke
-// - Uses 1 s delay after typing stops (max 10 s force flush)
-// - Overlay still updates instantly
-// -----------------------------------------------------------
-let lastAnalyzeResult: any = null; // ✅ Store latest analyze result
+import { readableLabel, scorePercent } from '@/shared/presentation';
 
-import { debounce } from "@/shared/debounce";  // ✅ new import
-
-type StagedFile = {
-  name: string;
-  type?: string | null;
-  size?: number;
-  buffer?: ArrayBuffer | null;
-  base64?: string | null;
-};
+type Detection = { label: string; confidence?: number; sensitivity_score?: number };
+type AnalysisResult = { status?: string; detections: Detection[]; warnings?: string[]; analysis_complete?: boolean };
+type Snapshot = { revision: number; text: string; files: File[]; requestId: string };
+type UploadReply = { ok?: boolean; superseded?: boolean; result?: AnalysisResult; error?: string };
 
 declare global {
   interface Window {
-    AEGIS_manualCapture?: () => Promise<any>;
-    AEGIS_getLastResult?: () => any; // ✅ added helper
+    AEGIS_manualCapture?: () => Promise<UploadReply>;
+    AEGIS_getLastResult?: () => AnalysisResult | null;
   }
 }
 
-const DEBUG_TAG = "[Aegis content_script]";
-const ROOT_SELECTOR = "#prompt-textarea";
-const OVERLAY_ID = "aegis-overlay-logger";
-const MAX_TRANSFER_BYTES = 8 * 1024 * 1024; // 8 MB safe limit
+const MAX_TRANSFER_BYTES = 8 * 1024 * 1024;
+const sessionId = crypto.randomUUID();
+const files: File[] = [];
+const inputFiles = new WeakMap<HTMLInputElement, File[]>();
+const hookedInputs = new WeakSet<HTMLInputElement>();
+let composer: HTMLElement | null = null;
+let composerObserver: MutationObserver | null = null;
+let revision = 0;
+let lastText = '';
+let lastFiles = '';
+let timer: ReturnType<typeof setTimeout> | null = null;
+let running = false;
+let pending: Snapshot | null = null;
+let currentRequestId = '';
+let lastAppliedRequestId = '';
+let lastAnalyzeResult: AnalysisResult | null = null;
+let lastPath = location.pathname;
+let fileWarning = '';
+let pendingSubmission = false;
 
-function d(...a: unknown[]) { console.log(DEBUG_TAG, ...a); }
+const panel = document.createElement('section');
+panel.id = 'aegis-privacy-status';
+panel.setAttribute('aria-label', 'AEGIS privacy check');
+Object.assign(panel.style, {
+  position: 'fixed', right: '16px', bottom: '16px', zIndex: '2147483647',
+  width: '300px', maxHeight: '45vh', overflowY: 'auto', background: '#0f172a',
+  color: '#e2e8f0', border: '1px solid #475569', borderRadius: '12px', padding: '14px',
+  boxShadow: '0 8px 24px #0005', font: '13px/1.5 system-ui, sans-serif',
+});
+const heading = document.createElement('strong');
+heading.textContent = 'AEGIS privacy check';
+panel.appendChild(heading);
+const status = document.createElement('div');
+status.setAttribute('role', 'status');
+status.setAttribute('aria-live', 'polite');
+status.style.margin = '8px 0';
+panel.appendChild(status);
+const fileList = document.createElement('div');
+panel.appendChild(fileList);
+const controls = document.createElement('div');
+controls.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+const checkButton = document.createElement('button');
+checkButton.textContent = 'Check now';
+const hideButton = document.createElement('button');
+hideButton.textContent = 'Hide';
+for (const button of [checkButton, hideButton]) {
+  button.style.cssText = 'border:1px solid #64748b;border-radius:6px;padding:4px 9px;background:#1e293b;color:#e2e8f0;cursor:pointer';
+  controls.appendChild(button);
+}
+hideButton.onclick = () => { panel.hidden = true; };
+panel.appendChild(controls);
+document.body.appendChild(panel);
 
-function escapeHtml(s: string) {
-  return String(s).replace(/[&<>"']/g, (m) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[m]
-  );
+function setStatus(message: string, tone: 'normal' | 'warning' | 'error' = 'normal') {
+  status.textContent = message;
+  status.style.whiteSpace = 'pre-line';
+  status.style.color = tone === 'error' ? '#fca5a5' : tone === 'warning' ? '#fde68a' : '#cbd5e1';
+  if (tone !== 'normal') panel.hidden = false;
 }
 
-/* ---------- Overlay ---------- */
-function createOverlay(): HTMLElement {
-  let o = document.getElementById(OVERLAY_ID) as HTMLElement | null;
-  if (o) return o;
-  o = document.createElement("div");
-  o.id = OVERLAY_ID;
-  Object.assign(o.style, {
-    position: "fixed", right: "12px", bottom: "12px", zIndex: "2147483647",
-    width: "360px", maxHeight: "40vh", overflowY: "auto",
-    background: "#071028", color: "#e6eef8", padding: "10px",
-    borderRadius: "10px", boxShadow: "0 8px 28px rgba(2,8,20,0.7)",
-    fontFamily: "system-ui, Arial, sans-serif", fontSize: "12px",
-  } as Partial<CSSStyleDeclaration>);
-
-  const head = document.createElement("div");
-  head.style.display = "flex";
-  head.style.justifyContent = "space-between";
-  head.style.marginBottom = "8px";
-  head.innerHTML = `<strong style="font-size:13px">AEGIS — live capture</strong>`;
-  const btn = document.createElement("button");
-  btn.textContent = "Hide";
-  Object.assign(btn.style, { fontSize: "12px", padding: "4px 8px", cursor: "pointer" });
-  btn.onclick = () => {
-    o!.style.display = o!.style.display === "none" ? "" : "none";
-    btn.textContent = o!.style.display === "none" ? "Show" : "Hide";
-  };
-  head.appendChild(btn);
-  o.appendChild(head);
-
-  const promptEl = document.createElement("pre");
-  promptEl.id = OVERLAY_ID + "-prompt";
-  Object.assign(promptEl.style, {
-    whiteSpace: "pre-wrap", margin: "0", padding: "6px",
-    background: "#0b1730", borderRadius: "6px",
-    maxHeight: "6em", overflow: "auto",
-  } as Partial<CSSStyleDeclaration>);
-  promptEl.textContent = "Waiting for prompt...";
-  o.appendChild(promptEl);
-
-  const filesList = document.createElement("div");
-  filesList.id = OVERLAY_ID + "-files";
-  filesList.style.marginTop = "8px";
-  filesList.textContent = "Attachments: None";
-  o.appendChild(filesList);
-
-  document.body.appendChild(o);
-  return o;
+function readText() {
+  if (composer instanceof HTMLTextAreaElement || composer instanceof HTMLInputElement) return composer.value;
+  return (composer?.innerText ?? composer?.textContent ?? '').replace(/\u00a0/g, ' ');
 }
 
-/* ---------- Text helpers ---------- */
-function findParagraph(): HTMLElement | null {
-  const root = document.querySelector(ROOT_SELECTOR);
-  if (!root) return null;
-  return (root.querySelector("p") as HTMLElement) || (root as HTMLElement);
-}
-function readParagraphText(p: Element | null): string {
-  if (!p) return "";
-  return ((p as HTMLElement).innerText ?? (p as HTMLElement).textContent ?? "").replace(/\u00A0/g, "");
+function findComposer() {
+  const selectors = location.hostname === 'gemini.google.com'
+    ? 'rich-textarea [contenteditable="true"], .ql-editor[contenteditable="true"], [contenteditable="true"][role="textbox"], textarea'
+    : '#prompt-textarea, textarea[data-id="root"], textarea[placeholder*="Message"], [contenteditable="true"][role="textbox"]';
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>(selectors));
+  return candidates.find(element => element.getClientRects().length > 0) || candidates[0] || null;
 }
 
-/* ---------- Staging ---------- */
-const stagedFiles: StagedFile[] = [];
+function fileKey(file: File) { return `${file.name}:${file.size}:${file.lastModified}:${file.type}`; }
 
-async function fileToArrayBuffer(file: File): Promise<ArrayBuffer> { return await file.arrayBuffer(); }
-
-function updateOverlayPrompt(text: string) {
-  const pre = document.getElementById(OVERLAY_ID + "-prompt");
-  if (pre) pre.textContent = text || "";
-}
-function updateOverlayFiles() {
-  const el = document.getElementById(OVERLAY_ID + "-files");
-  if (!el) return;
-  if (!stagedFiles.length) { el.textContent = "Attachments: None"; return; }
-  el.innerHTML = "";
-  stagedFiles.forEach((f, i) => {
-    const row = document.createElement("div");
-    row.style.marginBottom = "6px";
-    row.innerHTML = `<div style="font-weight:700">${i + 1}. ${escapeHtml(f.name)}</div>
-      <div style="font-size:11px;color:#9fb0d6">${f.type || "unknown"} — ${Math.round((f.size || 0) / 1024)} KB</div>`;
-    el.appendChild(row);
+function renderFiles() {
+  fileList.replaceChildren();
+  files.forEach(file => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:5px';
+    const name = document.createElement('span');
+    name.textContent = file.name;
+    name.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    const remove = document.createElement('button');
+    remove.textContent = 'Clear from AEGIS';
+    remove.setAttribute('aria-label', `Stop checking ${file.name}`);
+    remove.onclick = () => {
+      files.splice(files.indexOf(file), 1);
+      renderFiles();
+      onChange(true);
+    };
+    row.append(name, remove);
+    fileList.appendChild(row);
   });
 }
 
-function consoleProof(source: string, text: string | undefined, files?: StagedFile[]) {
-  const excerpt = (text || "").slice(0, 300);
-  console.groupCollapsed("%cAEGIS capture — " + source, "background:#071028;color:#cfe8ff;padding:4px;border-radius:4px");
-  console.log("excerpt:", excerpt);
-  if (files && files.length) console.log("files:", files.map(f => ({ name: f.name, size: f.size, type: f.type })));
-  console.groupEnd();
+function stageFiles(incoming: File[]) {
+  fileWarning = '';
+  for (const file of incoming) {
+    if (files.some(existing => fileKey(existing) === fileKey(file))) continue;
+    if (files.reduce((total, item) => total + item.size, 0) + file.size > MAX_TRANSFER_BYTES) {
+      fileWarning = 'Some attachments exceed the 8 MB transfer limit and have not been checked. Use smaller files.';
+      continue;
+    }
+    files.push(file);
+  }
+  renderFiles();
+  onChange(true);
 }
 
-/* ---------- ArrayBuffer -> base64 ---------- */
-function arrayBufferToBase64(ab: ArrayBuffer): string {
-  const bytes = new Uint8Array(ab);
-  const chunk = 0x8000;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += chunk) {
-    const sub = bytes.subarray(i, i + chunk);
-    binary += String.fromCharCode.apply(null, Array.from(sub));
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
   }
   return btoa(binary);
 }
 
-/* ---------- Send to background ---------- */
-function sendToBackground(text: string, files?: StagedFile[], source?: string): Promise<any> {
-  consoleProof(source || "unknown", text, files);
-
+async function sendSnapshot(snapshot: Snapshot): Promise<UploadReply> {
+  const encodedFiles = await Promise.all(snapshot.files.map(async file => ({
+    name: file.name, type: file.type, size: file.size,
+    base64: arrayBufferToBase64(await file.arrayBuffer()),
+  })));
   return new Promise((resolve, reject) => {
     try {
-      const payload = {
-        text: text || "",
-        files: (files || []).map(f => {
-          if (f.buffer instanceof ArrayBuffer) {
-            let base64 = null;
-            try { base64 = arrayBufferToBase64(f.buffer); } catch (e) { d("base64 conversion failed", e); }
-            return { name: f.name, type: f.type, size: f.size, base64 };
-          }
-          return { name: f.name, type: f.type, size: f.size };
-        }),
-      };
-
-      chrome.runtime.sendMessage({ type: "UPLOAD_CANDIDATE", payload, source }, (resp) => {
-        const last = chrome.runtime.lastError;
-        if (last) return reject(new Error("runtime.sendMessage: " + last.message));
-        if (!resp) return reject(new Error("no response from background"));
-        if (resp.ok) return resolve(resp);
-        reject(new Error(resp.error || "upload failed"));
+      chrome.runtime.sendMessage({
+        type: 'UPLOAD_CANDIDATE', requestId: snapshot.requestId,
+        payload: { text: snapshot.text, files: encodedFiles },
+      }, (response: UploadReply | undefined) => {
+        if (chrome.runtime.lastError) return reject(new Error('The extension connection was interrupted. Reload this page and try again.'));
+        if (!response) return reject(new Error('The extension did not receive a backend response.'));
+        resolve(response);
       });
-    } catch (e) {
-      d("sendToBackground exception", e);
-      reject(e);
-    }
+    } catch { reject(new Error('The extension was reloaded. Reload this page to reconnect AEGIS.')); }
   });
 }
 
-/* ---------- Debounced wrapper ---------- */
-const debouncedSend = debounce(
-  (txt: string, src: string) => {
-    console.log("%c[AEGIS debounce] flush → backend", "color:#8ef");
-    sendToBackground(txt, stagedFiles.slice(), src).catch(e => d("bg send err", e));
-  },
-  2000,
-  { maxWait: 10000 }
-);
-
-/* ---------- Watcher ---------- */
-let last = "";
-
-(function attachWatcher() {
-  createOverlay();
-  let paragraph = findParagraph();
-  let paragraphObserver: MutationObserver | null = null;
-  let rootObserver: MutationObserver | null = null;
-  let attempts = 0;
-
-  function start() {
-    const root = document.querySelector(ROOT_SELECTOR);
-    if (!root && attempts < 40) { attempts++; setTimeout(start, 200); return; }
-    if (!root) { d("prompt root not found:", ROOT_SELECTOR); updateOverlayPrompt("Prompt root not found"); return; }
-
-    // keystroke events
-    root.addEventListener("input", () => { paragraph = findParagraph(); onChange("root-input"); }, { passive: true });
-    root.addEventListener("keyup", () => { paragraph = findParagraph(); onChange("root-keyup"); }, { passive: true });
-
-    // observe DOM
-    rootObserver = new MutationObserver(() => {
-      const newP = findParagraph();
-      if (newP !== paragraph) {
-        paragraph = newP;
-        onChange("root-mutation");
-        if (paragraphObserver) { try { paragraphObserver.disconnect(); } catch {} paragraphObserver = null; }
-        if (paragraph) {
-          paragraphObserver = new MutationObserver(() => onChange("paragraph-mutation"));
-          paragraphObserver.observe(paragraph, { characterData: true, childList: true, subtree: true });
-        }
-      }
-    });
-    rootObserver.observe(root, { childList: true, subtree: false });
-
-    paragraph = findParagraph();
-    if (paragraph) {
-      onChange("initial-read");
-      paragraphObserver = new MutationObserver(() => onChange("paragraph-mutation"));
-      paragraphObserver.observe(paragraph, { characterData: true, childList: true, subtree: true });
-    }
-
-    /* ---------- File hooks (unchanged) ---------- */
-    function hookFileInputs() {
-      document.querySelectorAll<HTMLInputElement>("input[type='file']").forEach(input => {
-        const anyInput = input as any;
-        if (anyInput.__aegis_hooked) return;
-        anyInput.__aegis_hooked = true;
-        input.addEventListener("change", async () => {
-          try {
-            for (const f of Array.from(input.files || [])) {
-              const buffer = await fileToArrayBuffer(f);
-              stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
-            }
-            updateOverlayFiles();
-            onChange("file-input-change");
-          } catch (e) { d("file change err", e); }
-        });
-      });
-    }
-    hookFileInputs();
-    setTimeout(hookFileInputs, 700);
-    setTimeout(hookFileInputs, 2500);
-    setInterval(hookFileInputs, 3500);
-
-    document.addEventListener("paste", async (ev: ClipboardEvent) => {
-      try {
-        const items = ev.clipboardData && ev.clipboardData.items;
-        if (!items) return;
-        for (const it of Array.from(items)) {
-          if ((it as DataTransferItem).kind === "file") {
-            const f = (it as DataTransferItem).getAsFile();
-            if (f) {
-              const buffer = await fileToArrayBuffer(f);
-              stagedFiles.push({ name: f.name || "clipboard", type: f.type, size: f.size, buffer });
-            }
-          }
-        }
-        updateOverlayFiles();
-        onChange("paste");
-      } catch (e) { d("paste err", e); }
-    }, { passive: true });
-
-    document.addEventListener("drop", async (ev: DragEvent) => {
-      try {
-        const files = (ev.dataTransfer && Array.from(ev.dataTransfer.files)) || [];
-        for (const f of files) {
-          const buffer = await fileToArrayBuffer(f);
-          stagedFiles.push({ name: f.name, type: f.type, size: f.size, buffer });
-        }
-        updateOverlayFiles();
-        onChange("drop");
-      } catch (e) { d("drop err", e); }
-    }, { passive: true });
-
-    window.AEGIS_manualCapture = function () {
-      const p = findParagraph();
-      const t = readParagraphText(p);
-      updateOverlayPrompt(t || "(empty)");
-
-      const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || (f.buffer ? f.buffer.byteLength : 0)), 0);
-      if (totalBytes > MAX_TRANSFER_BYTES) {
-        d("Total staged files exceed transfer limit", totalBytes);
-        return sendToBackground(
-          t,
-          stagedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, buffer: null })),
-          "manual-capture"
-        ).catch(err => ({ error: String(err), note: "files too large to transfer" }));
-      }
-
-      return sendToBackground(t, stagedFiles.slice(), "manual-capture")
-        .then(r => r)
-        .catch(e => ({ error: String(e) }));
-    };
+function applyReply(reply: UploadReply, requestId: string) {
+  if (reply.superseded || requestId !== currentRequestId || requestId === lastAppliedRequestId) return;
+  lastAppliedRequestId = requestId;
+  if (reply.error || !reply.result) {
+    lastAnalyzeResult = null;
+    setStatus(`${reply.error || 'The privacy check failed.'}\nThis content has not been fully checked.`, 'error');
+    return;
   }
-
-  async function onChange(source: string) {
-    const paragraph = findParagraph();
-    const txt = readParagraphText(paragraph);
-    if (txt === last) return;
-    last = txt;
-
-    updateOverlayPrompt(txt);
-
-    const totalBytes = stagedFiles.reduce((s, f) => s + (f.size || (f.buffer ? f.buffer.byteLength : 0)), 0);
-    if (totalBytes > MAX_TRANSFER_BYTES) {
-      d("skip sending capture: staged files too large", totalBytes);
-      const metaOnly = stagedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, buffer: null }));
-      sendToBackground(txt, metaOnly, source).catch(e => d("bg send err", e));
-      return;
-    }
-
-    debouncedSend(txt, source);
+  lastAnalyzeResult = reply.result;
+  const detections = reply.result.detections || [];
+  const warnings = [...(reply.result.warnings || []), ...(fileWarning ? [fileWarning] : [])];
+  if (reply.result.analysis_complete === false && !warnings.length) {
+    warnings.push('Some models or attachments could not be checked.');
   }
-
-  start();
-})();
-
-d('AEGIS content script installed');
-
-/* ---------- Alert system for compromised labels ---------- */
-function extractCompromisedLabelsSimple(result: any): Array<{label?: string; text?: string}> {
-  const out: Array<{label?: string; text?: string}> = [];
-  if (!result) return out;
-
-  if (Array.isArray(result.compromised_labels)) {
-    for (const it of result.compromised_labels) {
-      out.push({ label: it.label || it.name, text: it.text || it.match || it.sample });
-    }
-    return out;
-  }
-
-  if (Array.isArray(result.labels)) {
-    for (const it of result.labels) {
-      if (it.compromised || it.is_pii || it.risk === 'high') {
-        out.push({ label: it.name || it.label, text: it.text || it.sample });
-      }
-    }
-    return out;
-  }
-
-  if (result.compromised && typeof result.compromised === 'object') {
-    const it = result.compromised;
-    out.push({ label: it.label || it.name, text: it.text || it.sample });
-    return out;
-  }
-
-  if (result.label && result.compromised)
-    out.push({ label: result.label, text: result.text || result.sample });
-  return out;
+  const categories = [...new Map(detections.map(item => [item.label, item])).values()];
+  const lines = categories.map(item => {
+    const sensitivity = scorePercent(item.sensitivity_score);
+    return `• ${readableLabel(item.label)}${sensitivity === null ? '' : ` — sensitivity ${sensitivity}%`}`;
+  });
+  const message = detections.length
+    ? `Review before sharing:\n${lines.join('\n')}`
+    : 'No sensitive categories detected in this check.';
+  setStatus(`${message}${warnings.length ? `\n\nPartial check / service warning:\n${warnings.join('\n')}` : ''}`,
+    warnings.length || detections.length ? 'warning' : 'normal');
 }
 
-/** Show plain alert when compromised labels are detected */
-function triggerSimpleAlert(items: Array<{label?: string; text?: string}>) {
-  if (!items || !items.length) return;
-  const labelNames = items.map(i => i.label || 'Sensitive data').slice(0, 5).join(', ');
-  const msg = `⚠️ AEGIS detected potentially compromised data: ${labelNames}.\n\n` +
-              `Your information may contain sensitive content. Please review it carefully before sharing.`;
+async function analyze(snapshot: Snapshot): Promise<UploadReply> {
+  if (running) { pending = snapshot; return { ok: true }; }
+  running = true;
+  currentRequestId = snapshot.requestId;
+  setStatus(fileWarning ? `Checking…\n${fileWarning}` : 'Checking with the local models…', fileWarning ? 'warning' : 'normal');
   try {
-    alert(msg);
-  } catch (e) {
-    console.warn('[Aegis] triggerSimpleAlert failed', e, items);
+    const reply = await sendSnapshot(snapshot);
+    if (snapshot.revision === revision) applyReply(reply, snapshot.requestId);
+    return reply;
+  } catch (error) {
+    const reply = { ok: false, error: error instanceof Error ? error.message : 'The privacy check failed.' };
+    if (snapshot.revision === revision) applyReply(reply, snapshot.requestId);
+    return reply;
+  } finally {
+    running = false;
+    if (pending) {
+      const next = pending;
+      pending = null;
+      if (next.revision === revision) void analyze(next);
+    }
   }
 }
 
-/* ---------- Message listener ---------- */
-chrome.runtime.onMessage.addListener((msg, _sender) => {
-  try {
-    if (!msg || msg.type !== "UPLOAD_RESULT") return;
+function snapshot(): Snapshot {
+  return { revision, text: readText(), files: files.slice(), requestId: `${sessionId}:${revision}` };
+}
 
-    lastAnalyzeResult = msg.result || {}; // ✅ store globally
-    const detections = lastAnalyzeResult.detections;
+function onChange(force = false) {
+  const text = readText();
+  if (pendingSubmission && !text.trim()) {
+    pendingSubmission = false;
+    files.length = 0;
+    fileWarning = '';
+    renderFiles();
+  }
+  const signature = files.map(fileKey).join('|');
+  if (!force && text === lastText && signature === lastFiles) return;
+  lastText = text;
+  lastFiles = signature;
+  revision += 1;
+  currentRequestId = `${sessionId}:${revision}`;
+  lastAnalyzeResult = null;
+  if (timer) clearTimeout(timer);
+  pending = null;
+  if (!text.trim() && !files.length) {
+    setStatus(fileWarning || 'Enter a prompt or attach an image or PDF to check.', fileWarning ? 'warning' : 'normal');
+    return;
+  }
+  setStatus(fileWarning || 'Waiting for typing to pause…', fileWarning ? 'warning' : 'normal');
+  timer = setTimeout(() => { timer = null; void analyze(snapshot()); }, 1800);
+}
 
-    if (Array.isArray(detections) && detections.length > 0) {
-      // Format all label–score pairs line by line
-      const formatted = detections
-        .map((d: any) => `${d.label} — ${d.sensitivity_score}`)
-        .join("\n");
-
-      // Alert clean message
-      alert(`🧠 AEGIS Detections:\n\n${formatted}`);
+function attachComposer() {
+  if (location.pathname !== lastPath) {
+    lastPath = location.pathname;
+    files.length = 0;
+    fileWarning = '';
+    renderFiles();
+    onChange(true);
+  }
+  const found = findComposer();
+  if (found !== composer) {
+    composerObserver?.disconnect();
+    composer?.removeEventListener('input', handleInput);
+    composer = found;
+    if (composer) {
+      composer.addEventListener('input', handleInput);
+      composerObserver = new MutationObserver(() => onChange());
+      composerObserver.observe(composer, { characterData: true, childList: true, subtree: true });
+      onChange(true);
     } else {
-      alert("🧠 AEGIS Detections:\n\nNo sensitive labels detected.");
+      onChange(true);
+      setStatus('Waiting for the ChatGPT or Gemini prompt box.');
     }
-  } catch (e) {
-    console.error("[Aegis] alert listener error", e);
+  }
+  document.querySelectorAll<HTMLInputElement>('input[type="file"]').forEach(input => {
+    if (hookedInputs.has(input)) return;
+    hookedInputs.add(input);
+    input.addEventListener('change', () => {
+      for (const previous of inputFiles.get(input) || []) {
+        const index = files.indexOf(previous);
+        if (index !== -1) files.splice(index, 1);
+      }
+      const incoming = Array.from(input.files || []);
+      inputFiles.set(input, incoming);
+      stageFiles(incoming);
+    });
+  });
+}
+
+function handleInput() { onChange(); }
+
+window.AEGIS_manualCapture = async () => {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (!readText().trim() && !files.length) {
+    onChange(true);
+    return { ok: false, error: 'Enter text or attach a supported image or PDF first.' };
+  }
+  revision += 1;
+  currentRequestId = `${sessionId}:${revision}`;
+  return analyze(snapshot());
+};
+window.AEGIS_getLastResult = () => lastAnalyzeResult;
+checkButton.onclick = () => { void window.AEGIS_manualCapture?.(); };
+
+document.addEventListener('paste', event => {
+  if (!composer?.contains(event.target as Node)) return;
+  const incoming = Array.from(event.clipboardData?.files || []);
+  if (incoming.length) stageFiles(incoming);
+}, { passive: true });
+document.addEventListener('drop', event => {
+  if (panel.contains(event.target as Node)) return;
+  const incoming = Array.from(event.dataTransfer?.files || []);
+  if (incoming.length) stageFiles(incoming);
+}, { passive: true });
+
+// Submitted attachments must not leak into the next prompt's analysis.
+function clearAfterSend() {
+  pendingSubmission = true;
+  setTimeout(() => {
+    if (readText().trim()) return;
+    files.length = 0;
+    fileWarning = '';
+    renderFiles();
+    onChange(true);
+  }, 200);
+  setTimeout(() => { pendingSubmission = false; }, 2000);
+}
+document.addEventListener('click', event => {
+  const target = event.target as Element;
+  if (target.closest?.('[data-testid="send-button"], button[aria-label="Send prompt"], button[aria-label="Send message"], .send-button')) clearAfterSend();
+}, { passive: true });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey && composer?.contains(event.target as Node)) clearAfterSend();
+}, { passive: true });
+
+let attachScheduled = false;
+const pageObserver = new MutationObserver(() => {
+  if (attachScheduled) return;
+  attachScheduled = true;
+  requestAnimationFrame(() => { attachScheduled = false; attachComposer(); });
+});
+pageObserver.observe(document.body, { childList: true, subtree: true });
+setStatus('Waiting for the ChatGPT or Gemini prompt box.');
+attachComposer();
+
+chrome.runtime.onMessage.addListener(message => {
+  if (message?.type === 'UPLOAD_RESULT' && message.requestId) {
+    applyReply({ result: message.result, error: message.error }, message.requestId);
   }
 });
-
-
-/* ---------- Manual test helpers ---------- */
-(window as any).AEGIS_testAlert = function () {
-  const fake = {
-    compromised_labels: [
-      { label: 'EMAIL', text: 'alice@example.com' },
-      { label: 'PHONE', text: '+1-555-555-5555' }
-    ]
-  };
-  const items = extractCompromisedLabelsSimple(fake);
-  triggerSimpleAlert(items);
-};
-
-// ✅ Debug: inspect latest /api/analyze result
-(window as any).AEGIS_getLastResult = function () {
-  console.log('[Aegis] Last analyze result:', lastAnalyzeResult);
-  return lastAnalyzeResult;
-};
-
-
-export {};

@@ -1,55 +1,79 @@
-import redis
+"""Process per-session results: ``python -m pathway_engine.consumer``."""
+
 import json
+import logging
 import time
 
-r = redis.StrictRedis(host='localhost', port=6379, db=0)
+import redis
+
+from ml_service.contracts import summarize_detections
+from ml_service.redis_client import get_redis_client
+from pathway_engine.analytics import WorkerLease, install_stop_handler
+
+LOGGER = logging.getLogger(__name__)
+RESULT_QUEUE = "aegis:results"
+PROCESSED_TTL = 300
+PROCESSING_QUEUE = "aegis:results:processing"
+HEARTBEAT_KEY = "aegis:worker:consumer"
+LOCK_KEY = "aegis:results:worker"
+
 
 def process_data(result_data):
-    """
-    Simplified risk scoring logic.
-    Pathway can later replace this with complex stream analytics.
-    """
     try:
-        labels = [item["label"] for item in result_data]
-        scores = [item["score"] for item in result_data]
-        avg_score = sum(scores)/len(scores) if scores else 0
+        return summarize_detections(result_data)
+    except ValueError as exc:
+        return {"error": str(exc)}
 
-        severity = (
-            "high" if avg_score > 0.8 else
-            "medium" if avg_score > 0.5 else
-            "low"
-        )
 
-        return {
-            "labels": labels,
-            "avg_score": avg_score,
-            "severity": severity,
-            "timestamp": time.time()
-        }
-
-    except Exception as e:
-        return {"error": str(e)}
+def process_message(client, raw):
+    """Store a success or an explicit error; malformed jobs never kill the worker."""
+    try:
+        payload = json.loads(raw)
+        if not isinstance(payload, dict):
+            raise ValueError("A queued result must be an object")
+        session_id = payload.get("session_id")
+        if not isinstance(session_id, str) or not session_id.strip():
+            raise ValueError("A queued result requires session_id")
+        processed = process_data(payload.get("result_data"))
+    except (ValueError, TypeError, UnicodeError, RecursionError) as exc:
+        LOGGER.warning("Ignoring malformed result job: %s", exc)
+        client.lrem(PROCESSING_QUEUE, 1, raw)
+        return False
+    with client.pipeline(transaction=True) as transaction:
+        transaction.set(f"aegis:processed:{session_id}", json.dumps(processed, allow_nan=False), ex=PROCESSED_TTL)
+        transaction.lrem(PROCESSING_QUEUE, 1, raw)
+        transaction.execute()
+    return True
 
 
 def main():
-    print("[Pathway Engine] Listening for Redis queue jobs...")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    install_stop_handler()
+    client = get_redis_client()
+    LOGGER.info("Listening for result jobs on %s", RESULT_QUEUE)
+    lease = WorkerLease(client, LOCK_KEY, HEARTBEAT_KEY, "result")
+    try:
+        while True:
+            try:
+                lease.refresh()
+                pending = client.lindex(PROCESSING_QUEUE, 0)
+                if pending is None:
+                    pending = client.rpoplpush(RESULT_QUEUE, PROCESSING_QUEUE)
+                if pending is None:
+                    time.sleep(0.2)
+                    continue
+                process_message(client, pending)
+            except redis.exceptions.RedisError as exc:
+                LOGGER.warning("Redis unavailable; retrying result job: %s", exc)
+                time.sleep(1)
+    except KeyboardInterrupt:
+        LOGGER.info("Result worker stopped")
+    finally:
+        try:
+            lease.release()
+        except redis.exceptions.RedisError:
+            pass
 
-    while True:
-        msg = r.brpop("aegis:results", timeout=0)
-        if not msg:
-            continue
-
-        _, raw = msg
-        data = json.loads(raw)
-
-        session_id = data["session_id"]
-        result_data = data["result_data"]
-
-        print(f"[Pathway Engine] Processing session {session_id}...")
-        processed = process_data(result_data)
-
-        r.set(f"aegis:processed:{session_id}", json.dumps(processed), ex=300)
-        print(f"[Pathway Engine] ✔ Stored processed result for {session_id}")
 
 if __name__ == "__main__":
     main()
